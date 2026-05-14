@@ -1,0 +1,16 @@
+{
+  "name": "Supper Club",
+  "short_name": "Supper Club",
+  "icons": [
+    {
+      "src": "/supperclub.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#260000",
+  "theme_color": "#260000"
+}

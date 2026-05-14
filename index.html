@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Supper Club"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<title>Supper Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Barlow:wght@400;500;600&family=DM+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0a0a0a;color:#f0f0f0;-webkit-tap-highlight-color:transparent}
+body{overscroll-behavior:none}
+::-webkit-scrollbar{display:none}
+button{-webkit-appearance:none;appearance:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:#2a2a2a;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid #0a0a0a}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid #0a0a0a}
+input[type=text],textarea{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;width:100%;outline:none}
+input[type=text]:focus,textarea:focus{border-color:#444}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+
+// ── CONSTANTS ──────────────────────────────────────────────────────
+const PACES={
+  easy:   {label:"Easy / Z2",        pace:"6:00–6:20/km",color:"#47FFB8"},
+  longRun:{label:"Long Run",         pace:"6:00–6:20/km",color:"#47FFB8"},
+  marathon:{label:"Marathon Pace",   pace:"5:25–5:30/km",color:"#47C8FF"},
+  tempo:  {label:"Tempo / Threshold",pace:"5:05–5:15/km",color:"#E8FF47"},
+  hmPace: {label:"HM Race Pace",     pace:"4:53/km",     color:"#FFB347"},
+  tenK:   {label:"10K Pace",         pace:"4:45/km",     color:"#FF8C47"},
+  fiveK:  {label:"5K Pace",          pace:"4:33–4:38/km",color:"#FF6B47"},
+  reps400:{label:"400m Rep Pace",    pace:"4:25–4:30/km",color:"#FF4747"},
+};
+const T={
+  run:  {color:"#E8FF47",icon:"⚡",label:"RUN"},
+  cycle:{color:"#47C8FF",icon:"🔄",label:"BIKE"},
+  swim: {color:"#47FFB8",icon:"🌊",label:"SWIM"},
+  gym:  {color:"#FF6B47",icon:"💪",label:"GYM"},
+  rest: {color:"#888",   icon:"🌿",label:"REST"},
+};
+const phases=[
+  {label:"PHASE 1 — BUILD",  weeks:[1,2,3,4],  color:"#E8FF47",desc:"Establish aerobic base, movement patterns, and interval tolerance. Week 4 deloads."},
+  {label:"PHASE 2 — DEVELOP",weeks:[5,6,7,8],  color:"#47C8FF",desc:"Push volume and intensity. Paces begin to tighten. Week 8 deloads."},
+  {label:"PHASE 3 — SHARPEN",weeks:[9,10,11,12],color:"#FF6B47",desc:"Race-specific intensity, peak volume, taper. Week 12: 5K time trial."},
+];
+
+// ── WEEKLY INTENTIONS ──────────────────────────────────────────────
+const INTENTIONS=[
+  "Trust the easy pace. Run slow to run fast.",
+  "Consistency beats intensity. Show up every day.",
+  "Focus on form, not pace. Move well first.",
+  "Rest is part of the plan. Embrace the deload.",
+  "Push the quality sessions. Easy stays easy.",
+  "Find your tempo rhythm. Settle in and hold.",
+  "Visualise race pace. Know what it feels like.",
+  "Rest and rebuild. Your body grows stronger now.",
+  "Sharpen the edges. Every rep at race quality.",
+  "Trust the process. The fitness is there.",
+  "Race pace work. This is what it's been for.",
+  "Taper and believe. You've done the work. Now race.",
+];
+
+// ── MOBILITY ROUTINES ──────────────────────────────────────────────
+const MOBILITY={
+  preRun:[
+    {name:"Hip Flexor Lunge",duration:"45s each",cue:"Front shin vertical, drive hips forward, squeeze glute"},
+    {name:"Leg Swings (fwd/back)",duration:"15 reps each",cue:"Hold wall, controlled swing — don't force range"},
+    {name:"Leg Swings (lateral)",duration:"15 reps each",cue:"Loosen hip abductors before intervals"},
+    {name:"Ankle Circles",duration:"10 each way",cue:"Seated or standing — key for efficient foot strike"},
+    {name:"Glute Bridge",duration:"15 reps",cue:"Squeeze at top 2 seconds — activate glutes before running"},
+    {name:"World's Greatest Stretch",duration:"5 each side",cue:"Lunge + rotate + reach — thoracic + hip flexor combo"},
+    {name:"High Knees (slow)",duration:"20 reps",cue:"Warm up hip flexion pattern for interval session"},
+  ],
+  postRun:[
+    {name:"Standing Quad Stretch",duration:"45s each",cue:"Pull heel to glute, keep hips neutral"},
+    {name:"Pigeon Pose",duration:"60s each",cue:"Deep glute stretch — especially after long runs"},
+    {name:"Calf Stretch (straight leg)",duration:"45s each",cue:"Gastrocnemius — lean into wall"},
+    {name:"Calf Stretch (bent knee)",duration:"45s each",cue:"Soleus — essential post-interval work"},
+    {name:"Hip Flexor Stretch",duration:"60s each",cue:"Longer hold post-run than pre-run"},
+    {name:"Hamstring Doorway Stretch",duration:"60s each",cue:"Straight leg, flex foot — gentle"},
+    {name:"Thoracic Rotation",duration:"10 each side",cue:"Seated or lying — open upper back"},
+  ],
+  postGym:[
+    {name:"Lying Piriformis Stretch",duration:"60s each",cue:"Figure-4 position — targets deep hip"},
+    {name:"Copenhagen Adductor Hold",duration:"30s each",cue:"Light passive hold — just release tension"},
+    {name:"Thoracic Foam Roll",duration:"60s",cue:"3 segments — upper, mid, lower thoracic"},
+    {name:"Hip Flexor Couch Stretch",duration:"60s each",cue:"Back foot elevated — deepest hip flexor release"},
+    {name:"Lat Stretch",duration:"45s each",cue:"Reach overhead to wall, lean away"},
+    {name:"Wrist & Forearm",duration:"30s each",cue:"After deadlift and row work"},
+  ],
+};
+
+// ── COOLDOWN PROTOCOLS ─────────────────────────────────────────────
+const COOLDOWN={
+  intervals:"5 min walk → 5 min easy jog @ 6:30/km → static stretching (post-run routine) → 2 min box breathing (4 in / 4 hold / 4 out / 4 hold)",
+  tempo:"5 min easy jog @ 6:20/km → 3 min walk → post-run mobility routine → focus on hip flexors and calves",
+  longRun:"10 min walk → full post-run mobility routine (hold each stretch 60–90s) → optional sauna 15 min",
+  gym:"5 min light bike or walk → post-gym mobility → sauna or steam room 10–15 min",
+  easy:"5 min walk → light hip flexor and quad stretches",
+  swim:"100m easy backstroke → poolside thoracic and shoulder mobility",
+};
+
+// ── RACE DAY CHECKLIST ─────────────────────────────────────────────
+const RACE_CHECKLIST=[
+  {section:"48 HOURS BEFORE",items:[
+    "Carb load — pasta/rice dinner Thursday and Friday",
+    "Hydrate consistently — urine pale yellow",
+    "Sleep 8+ hrs Thursday night — most important night",
+    "Lay out all kit Saturday evening",
+    "Charge GPS watch",
+    "No new foods, no alcohol",
+  ]},
+  {section:"MORNING OF",items:[
+    "Wake up 2.5 hrs before start",
+    "Big oat porridge (100g) + banana + honey + black coffee",
+    "Sip water steadily — don't overdrink",
+    "Kit check: vest, shorts, socks, shoes (no new kit)",
+    "Foam roll quads and calves 5 min",
+  ]},
+  {section:"WARM-UP (20 MIN BEFORE)",items:[
+    "10 min easy jog @ 6:00/km",
+    "3 × 20s strides — build to race pace",
+    "Hip flexor lunge 30s each",
+    "High knees + butt kicks 30s each",
+    "Stand still, breathe, visualise first km",
+  ]},
+  {section:"PACING STRATEGY",items:[
+    "Target: sub-23:00 (4:33–4:38/km average)",
+    "Km 1: 4:38 — go out controlled, feel good",
+    "Km 2: 4:35 — find rhythm, settle breathing",
+    "Km 3: 4:33 — this is where it gets honest",
+    "Km 4: 4:30 — push if you have it, hold form",
+    "Km 5: everything left — lean forward and go",
+  ]},
+  {section:"POST RACE",items:[
+    "10 min easy walk — do not stop dead",
+    "Eat within 30 min — banana + protein shake",
+    "Record your time and how each km felt",
+    "Full post-run mobility routine",
+    "Log result in the app — compare to Week 1",
+  ]},
+];
+
+// ── POST-PLAN GUIDE ────────────────────────────────────────────────
+const POST_PLAN_TARGETS={
+  "Sub 23:00":{easy:"6:05–6:20",tempo:"5:05–5:10",reps:"4:25–4:28",tenK:"4:44",nextGoal:"Sub 22:00 in 12 weeks"},
+  "Sub 22:00":{easy:"5:55–6:10",tempo:"4:55–5:05",reps:"4:18–4:22",tenK:"4:36",nextGoal:"Sub 21:00 in 16 weeks"},
+  "Sub 21:00":{easy:"5:45–6:00",tempo:"4:45–4:55",reps:"4:08–4:12",tenK:"4:26",nextGoal:"Sub 20:00 — elite territory"},
+};
+
+// ── WEIGHT CALCULATOR ──────────────────────────────────────────────
+function weights(p,isDeload){
+  const s=isDeload?0.85:p===1?1:p===2?1.07:1.14;
+  const r=(base)=>`${Math.round((base*s)/2.5)*2.5}kg`;
+  return{
+    trapDL:r(60),splitSquat:r(35),hipThrust:r(62),stepUp:r(22),
+    powerClean:r(42),pullUp:p===1?"BW":"BW +5kg",dbRow:r(22),
+    landmine:r(25),farmerCarry:r(28),
+    nordics:"Bodyweight — control the descent",copHold:"Bodyweight",
+    pallof:p===1?"10kg band/cable":p===2?"12.5kg":"15kg",
+  };
+}
+
+// ── NUTRITION DATA ─────────────────────────────────────────────────
+const nutrition={
+  doubleAM:[
+    {time:"06:00",label:"Pre-Session 1",color:"#E8FF47",food:"Oat porridge (80g + oat milk) + banana + black coffee"},
+    {time:"08:00",label:"Post-Session 1",color:"#47C8FF",food:"3 scrambled eggs + 1 slice sourdough + 200ml oat milk"},
+    {time:"12:00",label:"Lunch",color:"#47FFB8",food:"Chicken rice bowl + broccoli + olive oil (40g+ protein)"},
+    {time:"18:00",label:"Pre-Session 2",color:"#E8FF47",food:"2 rice cakes + 1 tbsp almond butter + banana"},
+    {time:"20:15",label:"Post-Session 2",color:"#47C8FF",food:"Salmon + sweet potato + peas — full recovery meal"},
+    {time:"21:30",label:"Evening",color:"#888",food:"Coconut yoghurt + frozen berries + mixed nuts"},
+  ],
+  singleAM:[
+    {time:"06:00",label:"Pre-Session",color:"#E8FF47",food:"Banana + 1 tbsp almond butter — light & fast"},
+    {time:"08:00",label:"Post-Session",color:"#47C8FF",food:"3 eggs any style + 1 slice sourdough + ½ avocado"},
+    {time:"12:30",label:"Lunch",color:"#47FFB8",food:"Tuna/chickpea bowl + brown rice + spinach"},
+    {time:"16:00",label:"Snack",color:"#888",food:"30g mixed nuts + 2 squares dark chocolate"},
+    {time:"19:00",label:"Dinner",color:"#FF6B47",food:"Chicken thigh + sweet potato + greens"},
+  ],
+  longRun:[
+    {time:"06:30",label:"Pre-Run",color:"#E8FF47",food:"BIG oat porridge (100g) + banana + honey + oat milk — don't skip this"},
+    {time:"09:00",label:"Mid-Run",color:"#E8FF47",food:"Date or banana at 45 min mark if run >75 min"},
+    {time:"09:30",label:"Post-Run",color:"#47C8FF",food:"4 eggs + 2 slices sourdough + avocado + OJ — earned it"},
+    {time:"13:00",label:"Lunch",color:"#47FFB8",food:"Lentil soup + sourdough or big chicken salad"},
+    {time:"16:00",label:"Snack",color:"#888",food:"Banana + almond butter — keep glycogen up"},
+    {time:"19:00",label:"Dinner",color:"#FF6B47",food:"Coconut chicken curry + brown rice — carb refuel"},
+  ],
+  restDay:[
+    {time:"09:00",label:"Brunch",color:"#47FFB8",food:"3 eggs + ½ avocado + sourdough + cherry tomatoes"},
+    {time:"13:00",label:"Lunch",color:"#47FFB8",food:"Tuna salad — light protein, lower carbs today"},
+    {time:"16:00",label:"Snack",color:"#888",food:"Rice cakes + almond butter or handful of nuts"},
+    {time:"19:30",label:"Dinner",color:"#FF6B47",food:"Chickpea & sweet potato curry + small portion rice"},
+    {time:"21:00",label:"Optional",color:"#888",food:"Dark chocolate (2–3 squares) — rest day treat"},
+  ],
+};
+
+// ── PLAN GENERATOR ─────────────────────────────────────────────────
+// Double-day shape per week — 0 = single session only on that slot
+// monGym/wedGym/friGym = PM gym after AM run
+// tueB+tueSw = both 1 makes TUE a double | thuB+thuSw = both 1 makes THU a double
+// Deload weeks (4,8) and taper (12): zero doubles by design
+const WSHAPE={
+  1: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:0}, // 1 double: MON
+  2: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:1}, // 1 double: FRI
+  3: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:0,friGym:1}, // 2 doubles: MON FRI + TUE
+  4: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:0}, // 0 doubles — deload
+  5: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuB:1,thuSw:0,friGym:1}, // 2 doubles: MON FRI
+  6: {monGym:0,tueB:1,tueSw:1,wedGym:1,thuB:0,thuSw:1,friGym:0}, // 2 doubles: TUE WED
+  7: {monGym:1,tueB:1,tueSw:1,wedGym:1,thuB:1,thuSw:0,friGym:1}, // 3 doubles: MON TUE WED FRI
+  8: {monGym:0,tueB:0,tueSw:1,wedGym:0,thuB:1,thuSw:0,friGym:0}, // 0 doubles — deload
+  9: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:1}, // 2 doubles: MON FRI
+  10:{monGym:0,tueB:1,tueSw:1,wedGym:1,thuB:0,thuSw:0,friGym:1}, // 3 doubles: TUE WED FRI
+  11:{monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:1}, // 3 doubles: MON TUE THU FRI
+  12:{monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:0}, // 0 doubles — taper
+};
+
+const minsToKm=(mins)=>Math.round((mins/6)*10)/10;
+
+function makeWeek(wk){
+  const p=wk<=3?1:wk<=7?2:3;
+  const isDeload=wk===4||wk===8;
+  const isPeak=wk===12;
+  const sh=WSHAPE[wk]||WSHAPE[1];
+  const W=weights(p,isDeload);
+  const intReps=isDeload?5:p===1?7:p===2?9:10;
+  const tempoMin=isDeload?15:p===1?22:p===2?28:32;
+  const longMin=isDeload?55:p===1?75:p===2?90:isPeak?60:100;
+  const bikeZ2=isDeload?45:p===1?70:p===2?85:90;
+  const bikeTmp=isDeload?40:p===1?55:p===2?65:75;
+  const kReps=isDeload?4:p===1?5:p===2?6:7;
+  const swimDist=isDeload?"easy 800m":p===1?"4x300m":p===2?"4x400m":"5x400m";
+  const hpc=p===1?"4x4":p===2?"4x5":"5x4";
+  const adj400=p===2?" (target 4:22-4:27)":p===3?" (target 4:18-4:23)":"";
+  const adj1k=p===2?" (target 4:42)":p===3?" (target 4:38)":"";
+  const adjTmp=p===2?" (push to 5:05-5:10)":p===3?" (push to 5:00-5:05)":"";
+  const longKm=minsToKm(longMin);
+  const n2=nutrition.doubleAM,n1=nutrition.singleAM;
+
+  const monRun={slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:isDeload?"Easy Strides":"Track 400m Intervals",duration:isDeload?"35 min":"50 min",
+    paceKeys:isDeload?["easy"]:["easy","reps400"],cooldown:isDeload?"easy":"intervals",mobility:"postRun",
+    details:isDeload?["10 min easy @ 6:00-6:20/km","6x20s strides - fast but relaxed, full recovery","10 min easy cool-down"]
+      :["Warm-up: 10 min @ 6:00-6:20/km + drills","Main: "+intReps+"x400m @ 4:25-4:30/km (85-90s rest)"+adj400,"Cool-down: 10 min @ 6:00-6:20/km","Cue: quick turnover, tall hips, relaxed shoulders"],
+    rpe:isDeload?5:8};
+  const monGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
+    title:"Lower Power + Speed Transfer",duration:isDeload?"40 min":"55 min",
+    paceKeys:[],cooldown:"gym",mobility:"postGym",
+    details:isDeload?["Trap bar deadlift 3x3 @ "+W.trapDL,"Box jump 3x4 - bodyweight","Core 10 min","10 min sauna"]
+      :["Trap bar deadlift 4x4 @ "+W.trapDL+" - explosive, controlled","Single-leg box jump 4x5 each - bodyweight","Bulgarian split squat 3x8 @ "+W.splitSquat+" total (DBs)","Nordic hamstring curl 3x6 - "+W.nordics,"Copenhagen plank 3x20s each - "+W.copHold,"Dead bug 3x10","10 min sauna"],
+    gymExercises:isDeload?[]:["Trap bar deadlift","Bulgarian split squat","Nordic curl"],rpe:isDeload?5:7};
+  const tueBike={slot:"AM",time:"06:30",type:"cycle",preRun:false,
+    title:isDeload?"Easy Spin":"Bike Tempo Intervals",duration:isDeload?"40 min":bikeTmp+" min",
+    paceKeys:[],cooldown:"easy",mobility:null,
+    details:isDeload?["Pure easy Zone 2 spin","Cadence 85-90 rpm","No targets"]
+      :["10 min easy spin warm-up","3x"+(p===1?10:p===2?13:15)+" min @ threshold feel (3 min easy between)","10 min cool-down spin","Target cadence: 88-95 rpm"],
+    rpe:isDeload?4:7};
+  const tueSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
+    title:"Steady Swim",duration:isDeload?"30 min":"45 min",
+    paceKeys:[],cooldown:"swim",mobility:null,
+    details:isDeload?["400m easy mixed stroke","Focus on breathing"]
+      :["400m warm-up",swimDist+" freestyle @ 70% effort, 30s rest","200m cool-down","Cue: high elbow catch, long glide"],
+    rpe:isDeload?3:6};
+  const wedRun={slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:isDeload?"Easy Run":"Tempo Run",duration:isDeload?"30 min":"45 min",
+    paceKeys:isDeload?["easy"]:["easy","tempo"],cooldown:isDeload?"easy":"tempo",mobility:"postRun",
+    details:isDeload?["30 min easy @ 6:00-6:20/km"]
+      :["Warm-up: 10 min @ 6:00-6:20/km","Main: "+tempoMin+" min @ 5:05-5:15/km"+adjTmp,"Cool-down: 10 min @ 6:00-6:20/km","Cue: tall posture, forward lean, glutes firing","If it feels hard, you're on pace"],
+    rpe:isDeload?4:7};
+  const wedGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
+    title:"Upper Power + Rotational",duration:isDeload?"40 min":"55 min",
+    paceKeys:[],cooldown:"gym",mobility:"postGym",
+    details:isDeload?["Hang power clean 3x3 @ "+W.powerClean,"Pull-up 3x5 - "+W.pullUp,"Core 10 min","15 min steam room"]
+      :["Hang power clean "+hpc+" @ "+W.powerClean+" - triple extension","Weighted pull-up 4x5 - "+W.pullUp,"Single-arm DB row 3x10 each @ "+W.dbRow,"Landmine rotational press 3x8 each @ "+W.landmine,"Pallof press 3x12 each side @ "+W.pallof,"Hollow body hold 3x30s","15 min steam room"],
+    gymExercises:isDeload?[]:["Hang power clean","Weighted pull-up","Single-arm DB row","Landmine press"],rpe:isDeload?5:7};
+  const thuBike={slot:"AM",time:"06:30",type:"cycle",preRun:false,
+    title:"Zone 2 Bike",duration:isDeload?"45 min":bikeZ2+" min",
+    paceKeys:[],cooldown:"easy",mobility:null,
+    details:isDeload?["Pure Zone 2 - 60-65% max HR","Active recovery"]
+      :["Zone 2 only - 60-70% max HR","Fat oxidation + aerobic base","If you're breathing hard, go easier"],
+    rpe:isDeload?3:4};
+  const thuSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
+    title:"Recovery Swim + Mobility",duration:"35 min",
+    paceKeys:[],cooldown:"swim",mobility:null,
+    details:["800m easy mixed stroke - no targets","10 min poolside hip flexor + thoracic mobility","10 min sauna post-swim"],rpe:3};
+  const friRun={slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:isDeload?"Easy Run":isPeak?"Race Pace Tune-Up":"1K Repeats",
+    duration:isDeload?"30 min":isPeak?"35 min":"50 min",
+    paceKeys:isDeload?["easy"]:isPeak?["easy","fiveK"]:["easy","tenK"],cooldown:isDeload?"easy":"intervals",mobility:"postRun",
+    details:isDeload?["30 min easy @ 6:00-6:20/km"]
+      :isPeak?["10 min easy warm-up @ 6:00/km","3x1K @ 4:33-4:38/km - feel sharp","10 min easy cool-down","Legs should feel fast - trust the taper"]
+      :["Warm-up: 10 min @ 6:00-6:20/km + drills","Main: "+kReps+"x1000m @ 4:45/km (2 min rest)"+adj1k,"Cool-down: 10 min @ 6:00-6:20/km","Hold form in final reps"],
+    rpe:isDeload?4:isPeak?7:8};
+  const friGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
+    title:"Glute & Hip Drive",duration:isDeload?"35 min":"50 min",
+    paceKeys:[],cooldown:"gym",mobility:"postGym",
+    details:isDeload?["Hip thrust 3x6 @ "+W.hipThrust,"Step-up 3x6 each @ "+W.stepUp+"/hand","Band walk 10 min"]
+      :["Barbell hip thrust 4x8 @ "+W.hipThrust+" - full contraction","Depth jump to 10m sprint 4x"+(p===1?3:p===2?4:5),"Step-up + knee drive 3x10 each @ "+W.stepUp+"/hand","Lateral band walk 3x20 each direction","Farmer carry 3x30m @ "+W.farmerCarry+"/hand","Side plank + hip abduction 3x15 each"],
+    gymExercises:isDeload?[]:["Barbell hip thrust","Step-up","Farmer carry"],rpe:isDeload?4:7};
+
+  const restDay={slot:"-",time:"-",type:"rest",preRun:false,title:"Active Recovery",duration:"-",
+    paceKeys:[],cooldown:null,mobility:null,
+    details:["Light walk or complete rest","Foam roll — quads, calves, glutes 10 min","10-15 min sauna if available"],rpe:1};
+
+  const monS=[monRun,...(sh.monGym?[monGym]:[])];
+  const tueS=sh.tueB&&sh.tueSw?[tueBike,tueSw]:sh.tueB?[tueBike]:sh.tueSw?[tueSw]:[restDay];
+  const wedS=[wedRun,...(sh.wedGym?[wedGym]:[])];
+  const thuS=sh.thuB&&sh.thuSw?[thuBike,thuSw]:sh.thuB?[thuBike]:sh.thuSw?[thuSw]:[restDay];
+  const friS=[friRun,...(sh.friGym?[friGym]:[])];
+
+  return[
+    {day:"MON",label:"Monday",theme:sh.monGym?"Speed + Lower Power":isDeload?"Easy Strides":"Speed Run",nutrition:sh.monGym?n2:n1,sessions:monS},
+    {day:"TUE",label:"Tuesday",theme:sh.tueB&&sh.tueSw?(isDeload?"Easy Spin + Swim":"Threshold Bike + Swim"):sh.tueB?(isDeload?"Easy Spin":"Tempo Bike"):sh.tueSw?(isDeload?"Recovery Swim":"Steady Swim"):"Rest & Recovery",nutrition:(sh.tueB&&sh.tueSw)?n2:n1,sessions:tueS},
+    {day:"WED",label:"Wednesday",theme:sh.wedGym?"Tempo Run + Upper Power":isDeload?"Easy Run":"Tempo Run",nutrition:sh.wedGym?n2:n1,sessions:wedS},
+    {day:"THU",label:"Thursday",theme:sh.thuB&&sh.thuSw?"Zone 2 Bike + Recovery Swim":sh.thuB?"Zone 2 Bike":sh.thuSw?"Recovery Swim":"Rest & Recovery",nutrition:(sh.thuB&&sh.thuSw)?n2:n1,sessions:thuS},
+    {day:"FRI",label:"Friday",theme:sh.friGym?"Speed Endurance + Glute Drive":isPeak?"Race Pace Tune-Up":isDeload?"Easy Run":"Speed Endurance",nutrition:sh.friGym?n2:n1,sessions:friS},
+    {day:"SAT",label:"Saturday",theme:isPeak?"Shakeout Run":"Long Run",nutrition:nutrition.longRun,sessions:[
+      {slot:"AM",time:"07:00",type:"run",preRun:true,title:isPeak?"Easy Shakeout":"Long Aerobic Run",
+       duration:isPeak?"25 min":longMin+" min",paceKeys:isPeak?["easy"]:p>=2?["longRun","marathon"]:["longRun"],
+       cooldown:isPeak?"easy":"longRun",mobility:"postRun",
+       longRunData:isPeak?null:{mins:longMin,km:longKm},
+       details:isPeak?["25 min fully easy @ 6:00-6:20/km","Shake the legs, stay loose","Visualise your 5K test tomorrow"]
+         :[longMin+" min / ~"+longKm+"km @ 6:00-6:20/km","Do not push - the easy pace is the point","Biggest aerobic adaptation of the week",
+           p===1?"Stay easy the whole way":p===2?"Last 10 min can drift to 5:25-5:30/km":"Final 15 min at 5:25-5:30/km"],
+       rpe:isPeak?3:5},
+    ]},
+    {day:"SUN",label:"Sunday",theme:isPeak?"5K TEST DAY":"Full Rest",nutrition:isPeak?nutrition.longRun:nutrition.restDay,sessions:[
+      {slot:"-",time:"-",type:isPeak?"run":"rest",preRun:isPeak,title:isPeak?"5K Time Trial":"Full Rest",
+       duration:isPeak?"40 min":"-",paceKeys:isPeak?["fiveK"]:[],cooldown:isPeak?"intervals":null,mobility:isPeak?"postRun":null,
+       details:isPeak?["10 min easy warm-up @ 6:00/km + 3 strides","5K ALL OUT - target 4:33-4:38/km (sub-23:00)","10 min easy cool-down","Compare to Week 1 baseline","After 12 weeks expect 10-20s/km faster on rep pace"]
+         :["Complete rest - no training","Optional 20 min sauna + cold contrast","Sleep 8+ hrs","Prep for next week"],
+       rpe:isPeak?10:1},
+    ]},
+  ];
+}
+
+
+const weekData=Array.from({length:12},(_,i)=>makeWeek(i+1));
+const TOTAL_SESSIONS=weekData.reduce((a,wk)=>a+wk.reduce((b,d)=>b+d.sessions.length,0),0);
+const sKey=(wk,di,si)=>`${wk}-${di}-${si}`;
+
+// ── SLIDER COMPONENT ───────────────────────────────────────────────
+function Slider({value,onChange,min=1,max=5,color="#E8FF47",labels}){
+  const pct=((value-min)/(max-min))*100;
+  return(
+    <div>
+      <input type="range" min={min} max={max} value={value} onChange={e=>onChange(Number(e.target.value))}
+        style={{"--thumb-color":color}}
+      />
+      <style>{`input[type=range]::-webkit-slider-thumb{background:${color}} input[type=range]::-moz-range-thumb{background:${color}}`}</style>
+      {labels&&<div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+        {labels.map((l,i)=><span key={i} style={{fontSize:9,color:i===value-min?color:"#444",fontFamily:"'DM Mono',monospace",letterSpacing:1}}>{l}</span>)}
+      </div>}
+    </div>
+  );
+}
+
+// ── READINESS CHECK MODAL ──────────────────────────────────────────
+function ReadinessModal({dateKey,existing,onSave,onClose}){
+  const[sleep,setSleep]=useState(existing?.sleep||3);
+  const[fatigue,setFatigue]=useState(existing?.fatigue||3);
+  const[soreness,setSoreness]=useState(existing?.soreness||3);
+  const[mood,setMood]=useState(existing?.mood||3);
+  const avg=((sleep+fatigue+soreness+mood)/4).toFixed(1);
+  const color=avg>=4?"#47FFB8":avg>=3?"#E8FF47":avg>=2?"#FFB347":"#FF4747";
+  const advice=avg>=4?"Green light. Attack today's session.":avg>=3?"Proceed as planned. Stay attentive to how you feel.":avg>=2?"Consider reducing intensity by 15–20%. Don't skip, just dial back.":"Rest day recommended. A skipped session today beats an injury or illness tomorrow.";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
+      <div style={{width:"100%",background:"#111",borderRadius:"16px 16px 0 0",padding:24,animation:"slideIn 0.2s ease"}}>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,letterSpacing:2,marginBottom:4}}>Daily Readiness</div>
+        <div style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>HOW ARE YOU FEELING TODAY?</div>
+        {[
+          {label:"Sleep Quality",val:sleep,set:setSleep,lo:"Poor",hi:"Great",color:"#47C8FF"},
+          {label:"Energy / Fatigue",val:fatigue,set:setFatigue,lo:"Drained",hi:"Energised",color:"#E8FF47"},
+          {label:"Muscle Soreness",val:soreness,set:setSoreness,lo:"Very sore",hi:"Fresh",color:"#47FFB8"},
+          {label:"Mood / Motivation",val:mood,set:setMood,lo:"Low",hi:"High",color:"#FF6B47"},
+        ].map(r=>(
+          <div key={r.label} style={{marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+              <span style={{fontSize:11,color:"#bbb",fontFamily:"'DM Mono',monospace"}}>{r.label}</span>
+              <span style={{fontSize:13,fontFamily:"'Pirata One',cursive",color:r.color}}>{r.val}/5</span>
+            </div>
+            <Slider value={r.val} onChange={r.set} color={r.color} labels={[r.lo,"","","",r.hi]}/>
+          </div>
+        ))}
+        <div style={{background:`${color}15`,border:`1px solid ${color}40`,borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color}}>READINESS SCORE</span>
+            <span style={{fontFamily:"'Pirata One',cursive",fontSize:24,color}}>{avg}/5</span>
+          </div>
+          <div style={{fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.6}}>{advice}</div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>Cancel</button>
+          <button onClick={()=>onSave({sleep,fatigue,soreness,mood,avg:parseFloat(avg)})} style={{flex:2,padding:"12px 0",background:`${color}20`,border:`1px solid ${color}50`,borderRadius:8,color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>SAVE READINESS</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SESSION LOG MODAL ──────────────────────────────────────────────
+function SessionLogModal({session,logKey,existing,onSave,onClose}){
+  const[pace,setPace]=useState(existing?.pace||"");
+  const[rpe,setRpe]=useState(existing?.rpe||session.rpe);
+  const[feel,setFeel]=useState(existing?.feel||3);
+  const[notes,setNotes]=useState(existing?.notes||"");
+  const cfg=T[session.type];
+  const isGym=session.type==="gym";
+  const[weights2,setWeights2]=useState(existing?.weights||{});
+  const exercises=session.gymExercises||[];
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
+      <div style={{width:"100%",background:"#111",borderRadius:"16px 16px 0 0",padding:24,maxHeight:"85vh",overflowY:"auto",animation:"slideIn 0.2s ease"}}>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,color:cfg.color,marginBottom:4}}>Log Session</div>
+        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>{session.title.toUpperCase()}</div>
+        {!isGym&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>ACTUAL PACE (optional)</div>
+            <input type="text" placeholder="e.g. 4:28/km avg or 4:26, 4:27, 4:29..." value={pace} onChange={e=>setPace(e.target.value)}/>
+          </div>
+        )}
+        {isGym&&exercises.length>0&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:10}}>WEIGHTS USED</div>
+            {exercises.map(ex=>(
+              <div key={ex} style={{marginBottom:10}}>
+                <div style={{fontSize:11,color:"#bbb",fontFamily:"'DM Mono',monospace",marginBottom:4}}>{ex}</div>
+                <input type="text" placeholder="e.g. 62.5kg" value={weights2[ex]||""} onChange={e=>setWeights2(p=>({...p,[ex]:e.target.value}))}/>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+            <span style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>ACTUAL RPE</span>
+            <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:rpe>=8?"#E8FF47":rpe>=6?"#47C8FF":"#47FFB8"}}>{rpe}/10</span>
+          </div>
+          <Slider value={rpe} onChange={setRpe} min={1} max={10} color={rpe>=8?"#E8FF47":rpe>=6?"#47C8FF":"#47FFB8"} labels={["1","","","","5","","","","","10"]}/>
+        </div>
+        <div style={{marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+            <span style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>HOW IT FELT</span>
+            <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:"#FF6B47"}}>{["","Awful","Hard","OK","Good","Great"][feel]}</span>
+          </div>
+          <Slider value={feel} onChange={setFeel} color="#FF6B47" labels={["Awful","Hard","OK","Good","Great"]}/>
+        </div>
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>NOTES</div>
+          <textarea rows={3} placeholder="How did it go? What to remember for next time..." value={notes} onChange={e=>setNotes(e.target.value)} style={{resize:"none"}}/>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>Cancel</button>
+          <button onClick={()=>onSave({pace,rpe,feel,notes,weights:weights2})} style={{flex:2,padding:"12px 0",background:`${cfg.color}20`,border:`1px solid ${cfg.color}50`,borderRadius:8,color:cfg.color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>SAVE LOG</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MOBILITY PANEL ─────────────────────────────────────────────────
+function MobilityPanel({type,title,color}){
+  const[open,setOpen]=useState(false);
+  const moves=MOBILITY[type]||[];
+  return(
+    <div style={{background:"#141414",borderRadius:8,marginTop:8,border:`1px solid ${color}25`}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",background:"none",border:"none",padding:"10px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:13}}>🧘</span>
+          <span style={{fontSize:11,fontFamily:"'DM Mono',monospace",color,letterSpacing:1}}>{title}</span>
+        </div>
+        <span style={{fontSize:12,color:"#444"}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&<div style={{padding:"0 14px 12px"}}>
+        {moves.map((m,i)=>(
+          <div key={i} style={{padding:"8px 0",borderBottom:i<moves.length-1?"1px solid #1e1e1e":"none"}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+              <span style={{fontSize:12,color:"#ccc",fontFamily:"'Barlow',sans-serif",fontWeight:500}}>{m.name}</span>
+              <span style={{fontSize:10,color:color,fontFamily:"'DM Mono',monospace"}}>{m.duration}</span>
+            </div>
+            <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{m.cue}</div>
+          </div>
+        ))}
+      </div>}
+    </div>
+  );
+}
+
+// ── COOLDOWN PANEL ─────────────────────────────────────────────────
+function CooldownPanel({type,color}){
+  const[open,setOpen]=useState(false);
+  const text=COOLDOWN[type];
+  if(!text)return null;
+  return(
+    <div style={{background:"#141414",borderRadius:8,marginTop:8,border:`1px solid ${color}25`}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",background:"none",border:"none",padding:"10px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:13}}>🏁</span>
+          <span style={{fontSize:11,fontFamily:"'DM Mono',monospace",color,letterSpacing:1}}>COOL-DOWN PROTOCOL</span>
+        </div>
+        <span style={{fontSize:12,color:"#444"}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&<div style={{padding:"0 14px 12px",fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.8}}>{text}</div>}
+    </div>
+  );
+}
+
+// ── SESSION CARD ───────────────────────────────────────────────────
+function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logData}){
+  const cfg=T[s.type];
+  const cardBg=checked?"#0a140a":isMissed?"#1a0a0a":"#141414";
+  const borderCol=checked?"#47FFB8":isMissed?"#FF4747":cfg.color;
+  return(
+    <div style={{background:cardBg,borderRadius:8,marginBottom:8,borderLeft:`3px solid ${borderCol}`,padding:"12px 14px",transition:"all 0.25s",opacity:checked||isMissed?0.85:1}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
+            <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:checked?"#47FFB8":isMissed?"#FF4747":cfg.color,background:`${checked?"#47FFB8":isMissed?"#FF4747":cfg.color}22`,padding:"2px 7px",borderRadius:3}}>{s.slot}</span>
+            {s.time!=="—"&&<span style={{fontSize:9,color:"#777",fontFamily:"'DM Mono',monospace"}}>{s.time}</span>}
+            <span style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace"}}>{s.duration}</span>
+            {isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:1,color:"#FF4747",background:"#FF474718",padding:"2px 7px",borderRadius:3}}>MISSED</span>}
+          </div>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:19,letterSpacing:1,color:checked?"#47FFB8":isMissed?"#FF6666":"#f0f0f0",textDecoration:isMissed?"line-through":checked?"line-through":"none"}}>{s.title}</div>
+        </div>
+        {/* Done + Missed buttons */}
+        <div style={{display:"flex",gap:6,marginLeft:10,flexShrink:0}}>
+          <button onClick={()=>onToggle(sessionKey)} title="Mark done" style={{width:30,height:30,borderRadius:7,border:`2px solid ${checked?"#47FFB8":"#3a3a3a"}`,background:checked?"#47FFB825":"#1e1e1e",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:14}}>
+            <span style={{color:checked?"#47FFB8":"#444"}}>✓</span>
+          </button>
+          <button onClick={()=>onMiss(sessionKey)} title="Mark missed" style={{width:30,height:30,borderRadius:7,border:`2px solid ${isMissed?"#FF4747":"#3a3a3a"}`,background:isMissed?"#FF474725":"#1e1e1e",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:14}}>
+            <span style={{color:isMissed?"#FF4747":"#444"}}>✕</span>
+          </button>
+        </div>
+      </div>
+      {s.paceKeys&&s.paceKeys.length>0&&(
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",margin:"8px 0 4px"}}>
+          {s.paceKeys.map(k=>{const p=PACES[k];if(!p)return null;return(
+            <span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:10,fontFamily:"'DM Mono',monospace",background:`${p.color}22`,border:`1px solid ${p.color}50`,borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:p.color,flexShrink:0}}/>
+              <span style={{color:p.color,letterSpacing:0.5}}>{p.pace}</span>
+              <span style={{color:"#666",letterSpacing:1,fontSize:9}}>{p.label.toUpperCase()}</span>
+            </span>
+          );})}
+        </div>
+      )}
+      <ul style={{margin:"8px 0 0",padding:0,listStyle:"none"}}>
+        {s.details.map((d,i)=>(
+          <li key={i} style={{fontSize:11,color:checked?"#4a5e4a":"#888",fontFamily:"'DM Mono',monospace",padding:"3px 0",borderBottom:i<s.details.length-1?"1px solid #1e1e1e":"none",lineHeight:1.6}}>
+            <span style={{color:checked?"#47FFB8":cfg.color,marginRight:5}}>›</span>{d}
+          </li>
+        ))}
+      </ul>
+      <div style={{display:"flex",gap:3,alignItems:"center",marginTop:6}}>
+        <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",marginRight:4,letterSpacing:1}}>RPE</span>
+        {Array.from({length:10}).map((_,i)=>(
+          <div key={i} style={{width:10,height:4,borderRadius:2,background:i<s.rpe?s.rpe>=8?"#E8FF47":s.rpe>=6?"#47C8FF":"#47FFB8":"#2a2a2a"}}/>
+        ))}
+        <span style={{fontSize:9,color:"#555",marginLeft:3,fontFamily:"'DM Mono',monospace"}}>{s.rpe}/10</span>
+      </div>
+      {/* Cooldown + Mobility expanders */}
+      {s.cooldown&&<CooldownPanel type={s.cooldown} color={cfg.color}/>}
+      {s.mobility&&<MobilityPanel type={s.mobility} title={s.type==="gym"?"POST-GYM MOBILITY":"POST-RUN MOBILITY"} color={cfg.color}/>}
+      {/* Log session button */}
+      <div style={{display:"flex",gap:8,marginTop:10,alignItems:"center"}}>
+        <button onClick={onLog} style={{flex:1,padding:"8px 0",background:logData?"#47FFB815":"#1a1a1a",border:`1px solid ${logData?"#47FFB840":"#2a2a2a"}`,borderRadius:6,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,color:logData?"#47FFB8":"#666",letterSpacing:1}}>
+          {logData?"✓ LOGGED — TAP TO EDIT":"📝 LOG THIS SESSION"}
+        </button>
+        {logData&&<div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace"}}>RPE {logData.rpe} · {["","😖","😤","😐","😊","🤩"][logData.feel]}</div>}
+      </div>
+      {logData?.pace&&<div style={{fontSize:10,color:"#777",fontFamily:"'DM Mono',monospace",marginTop:4}}>Pace: {logData.pace}</div>}
+      {logData?.notes&&<div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",marginTop:2,lineHeight:1.5}}>"{logData.notes}"</div>}
+    </div>
+  );
+}
+
+// ── RACE DAY TAB ───────────────────────────────────────────────────
+function RaceDayTab(){
+  const[checks,setChecks]=useState(()=>{try{const s=localStorage.getItem("sc_racechecks");return s?JSON.parse(s):{}}catch{return{}}});
+  useEffect(()=>{try{localStorage.setItem("sc_racechecks",JSON.stringify(checks))}catch{}},[checks]);
+  const toggle=key=>setChecks(p=>({...p,[key]:!p[key]}));
+  const total=RACE_CHECKLIST.reduce((a,s)=>a+s.items.length,0);
+  const done=Object.values(checks).filter(Boolean).length;
+  return(
+    <div style={{padding:"16px 20px 0"}}>
+      <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>Race Day</div>
+      <div style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:14}}>WEEK 12 · 5K TIME TRIAL PREP</div>
+      <div style={{background:"#141414",borderRadius:8,padding:"12px 14px",marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+          <span style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>CHECKLIST PROGRESS</span>
+          <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:done===total?"#47FFB8":"#FF6B47"}}>{done}/{total}</span>
+        </div>
+        <div style={{height:6,background:"#222",borderRadius:3,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${(done/total)*100}%`,background:done===total?"#47FFB8":"#FF6B47",borderRadius:3,transition:"width 0.3s"}}/>
+        </div>
+      </div>
+      {RACE_CHECKLIST.map((section,si)=>(
+        <div key={si} style={{marginBottom:16}}>
+          <div style={{fontSize:9,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:3,marginBottom:8}}>{section.section}</div>
+          <div style={{background:"#141414",borderRadius:8,overflow:"hidden"}}>
+            {section.items.map((item,ii)=>{
+              const key=`${si}-${ii}`;
+              const done2=checks[key];
+              return(
+                <button key={ii} onClick={()=>toggle(key)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"11px 14px",background:"none",border:"none",borderBottom:ii<section.items.length-1?"1px solid #1e1e1e":"none",cursor:"pointer",textAlign:"left"}}>
+                  <div style={{width:22,height:22,borderRadius:5,border:`2px solid ${done2?"#47FFB8":"#333"}`,background:done2?"#47FFB820":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {done2&&<span style={{color:"#47FFB8",fontSize:12}}>✓</span>}
+                  </div>
+                  <span style={{fontSize:12,color:done2?"#47FFB8":"#bbb",fontFamily:"'DM Mono',monospace",lineHeight:1.5,textDecoration:done2?"line-through":"none"}}>{item}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── POST PLAN TAB ──────────────────────────────────────────────────
+function PostPlanTab(){
+  const[time,setTime]=useState(()=>{try{return localStorage.getItem("sc_fivektime")||""}catch{return""}});
+  const[saved,setSaved]=useState(!!time);
+  const save=()=>{try{localStorage.setItem("sc_fivektime",time);setSaved(true)}catch{}};
+  const mins=parseFloat(time);
+  const bucket=mins<21?"Sub 21:00":mins<22?"Sub 22:00":"Sub 23:00";
+  const targets=POST_PLAN_TARGETS[bucket]||POST_PLAN_TARGETS["Sub 23:00"];
+  return(
+    <div style={{padding:"16px 20px 0"}}>
+      <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>What's Next</div>
+      <div style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>POST-PLAN PROGRESSION GUIDE</div>
+      <div style={{background:"#141414",borderRadius:8,padding:"14px",marginBottom:16}}>
+        <div style={{fontSize:10,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>LOG YOUR 5K TEST TIME</div>
+        <div style={{display:"flex",gap:8}}>
+          <input type="text" placeholder="e.g. 22:34 (mm:ss)" value={time} onChange={e=>setTime(e.target.value)} style={{flex:1}}/>
+          <button onClick={save} style={{padding:"8px 16px",background:"#FF6B4720",border:"1px solid #FF6B4750",borderRadius:6,color:"#FF6B47",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>SAVE</button>
+        </div>
+      </div>
+      {saved&&time&&(
+        <div style={{animation:"slideIn 0.3s ease"}}>
+          <div style={{background:"#47FFB810",border:"1px solid #47FFB830",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:9,color:"#47FFB8",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:4}}>RESULT LOGGED</div>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:32,color:"#47FFB8",letterSpacing:2}}>{time}</div>
+            <div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",marginTop:4}}>5K Time Trial · Week 12</div>
+          </div>
+          <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:9,color:"#E8FF47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:12}}>YOUR NEW TRAINING PACES</div>
+            {[["Easy / Z2",targets.easy,"#47FFB8"],["Tempo",targets.tempo,"#E8FF47"],["400m Reps",targets.reps,"#FF4747"],["10K Pace",targets.tenK,"#FF8C47"]].map(([lbl,val,col])=>(
+              <div key={lbl} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:6,height:6,borderRadius:"50%",background:col}}/>
+                  <span style={{fontSize:12,color:"#bbb",fontFamily:"'Barlow',sans-serif"}}>{lbl}</span>
+                </div>
+                <span style={{fontSize:13,fontFamily:"'DM Mono',monospace",color:col}}>{val}/km</span>
+              </div>
+            ))}
+          </div>
+          <div style={{background:"#FF6B4710",border:"1px solid #FF6B4730",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:9,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>NEXT GOAL</div>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:"#FF6B47",letterSpacing:1,marginBottom:6}}>{targets.nextGoal}</div>
+            <div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>Start a fresh 12-week block with your new paces. Increase interval reps by 1 from week 1. Your aerobic base is built — now we sharpen it further.</div>
+          </div>
+        </div>
+      )}
+      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+        <div style={{fontSize:9,color:"#47C8FF",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:10}}>PROGRESSION LADDER</div>
+        {Object.entries(POST_PLAN_TARGETS).map(([key,val])=>(
+          <div key={key} style={{padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+              <span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"#47C8FF",letterSpacing:1}}>{key}</span>
+              <span style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace"}}>→ {val.nextGoal.split(" in")[0]}</span>
+            </div>
+            <div style={{fontSize:9,color:"#444",fontFamily:"'DM Mono',monospace"}}>Easy: {val.easy} · Tempo: {val.tempo} · Reps: {val.reps}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ───────────────────────────────────────────────────────
+function App(){
+  const[week,setWeek]=useState(0);
+  const[dayIdx,setDayIdx]=useState(0);
+  const[view,setView]=useState("training");
+  const[checked,setChecked]=useState(()=>{try{const s=localStorage.getItem("sc_progress");return s?JSON.parse(s):{}}catch{return{}}});
+  const[missed,setMissed]=useState(()=>{try{const s=localStorage.getItem("sc_missed");return s?JSON.parse(s):{}}catch{return{}}});
+  const[sessionLogs,setSessionLogs]=useState(()=>{try{const s=localStorage.getItem("sc_logs");return s?JSON.parse(s):{}}catch{return{}}});
+  const[readiness,setReadiness]=useState(()=>{try{const s=localStorage.getItem("sc_readiness");return s?JSON.parse(s):{}}catch{return{}}});
+  const[toast,setToast]=useState(null);
+  const[showReadiness,setShowReadiness]=useState(false);
+  const[logModal,setLogModal]=useState(null);
+  const toastRef=useRef(null);
+
+  useEffect(()=>{try{localStorage.setItem("sc_progress",JSON.stringify(checked))}catch{}},[checked]);
+  useEffect(()=>{try{localStorage.setItem("sc_missed",JSON.stringify(missed))}catch{}},[missed]);
+  useEffect(()=>{try{localStorage.setItem("sc_logs",JSON.stringify(sessionLogs))}catch{}},[sessionLogs]);
+  useEffect(()=>{try{localStorage.setItem("sc_readiness",JSON.stringify(readiness))}catch{}},[readiness]);
+
+  const showToast=msg=>{setToast(msg);clearTimeout(toastRef.current);toastRef.current=setTimeout(()=>setToast(null),2200)};
+  const toggleSession=key=>{
+    setChecked(p=>({...p,[key]:!p[key]}));
+    // if marking done, clear any missed flag
+    setMissed(p=>{const n={...p};delete n[key];return n;});
+  };
+  const toggleMissed=key=>{
+    setMissed(p=>({...p,[key]:!p[key]}));
+    // if marking missed, clear any done flag
+    setChecked(p=>{const n={...p};delete n[key];return n;});
+  };
+
+  useEffect(()=>{
+    const day=weekData[week][dayIdx];
+    const allActioned=day.sessions.every((_,si)=>checked[sKey(week,dayIdx,si)]||missed[sKey(week,dayIdx,si)]);
+    if(!allActioned)return;
+    const ndi=dayIdx+1;
+    if(ndi<weekData[week].length){
+      const t=setTimeout(()=>{setDayIdx(ndi);showToast(`${day.label} done ✓  →  ${weekData[week][ndi].label}`)},600);
+      return()=>clearTimeout(t);
+    }else{
+      const nwk=week+1;
+      if(nwk<12){const t=setTimeout(()=>{setWeek(nwk);setDayIdx(0);showToast(`Week ${week+1} complete! 🏆  →  Week ${week+2}`)},800);return()=>clearTimeout(t);}
+      else showToast("Plan complete! 🏁 Time to race.");
+    }
+  },[checked,missed]);
+
+  const wkKeys=w=>weekData[w].flatMap((d,di)=>d.sessions.map((_,si)=>sKey(w,di,si)));
+  const wkDone=w=>wkKeys(w).filter(k=>checked[k]).length;
+  const wkMissed=w=>wkKeys(w).filter(k=>missed[k]).length;
+  const wkTotal=w=>wkKeys(w).length;
+  const done=Object.values(checked).filter(Boolean).length;
+  const missedCount=Object.values(missed).filter(Boolean).length;
+  const pct=Math.round((done/TOTAL_SESSIONS)*100);
+  const missedPct=Math.round((missedCount/TOTAL_SESSIONS)*100);
+
+  const wkData=weekData[week];
+  const dayData=wkData[dayIdx];
+  const wkNum=week+1;
+  const isDeload=wkNum===4||wkNum===8;
+  const isPeak=wkNum===12;
+  const phase=phases.find(p=>p.weeks.includes(wkNum));
+  const todayKey=`r-${week}-${dayIdx}`;
+  const todayReadiness=readiness[todayKey];
+
+  const tabs=[["training","SESSIONS"],["nutrition","NUTRITION"],["paces","PACES"],["overview","OVERVIEW"],["race","RACE DAY"],["next","NEXT STEPS"]];
+
+  return(
+    <div style={{minHeight:"100vh",background:"#0a0a0a",color:"#f0f0f0",fontFamily:"'Barlow',sans-serif",paddingBottom:60}}>
+      {toast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#1a2a1a",border:"1px solid #47FFB860",borderRadius:10,padding:"10px 18px",fontSize:12,fontFamily:"'DM Mono',monospace",color:"#47FFB8",boxShadow:"0 4px 24px rgba(0,0,0,0.7)",whiteSpace:"nowrap",animation:"fadeIn 0.2s ease"}}>{toast}</div>}
+      {showReadiness&&<ReadinessModal dateKey={todayKey} existing={todayReadiness} onSave={d=>{setReadiness(p=>({...p,[todayKey]:d}));setShowReadiness(false);showToast("Readiness saved ✓")}} onClose={()=>setShowReadiness(false)}/>}
+      {logModal&&<SessionLogModal session={logModal.session} logKey={logModal.key} existing={sessionLogs[logModal.key]} onSave={d=>{setSessionLogs(p=>({...p,[logModal.key]:d}));setLogModal(null);showToast("Session logged ✓")}} onClose={()=>setLogModal(null)}/>}
+
+      {/* HEADER */}
+      <div style={{background:"#0a0a0a",padding:"44px 20px 14px",borderBottom:"1px solid #1e1e1e"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#555",marginBottom:4}}>12-WEEK ATHLETE PERFORMANCE PLAN</div>
+            <h1 style={{fontFamily:"'Pirata One',cursive",fontSize:34,margin:0,lineHeight:1.1,letterSpacing:2}}>
+              SUPPER CLUB<br/>
+              <span style={{color:phase?.color??"#E8FF47"}}>{isPeak?"TEST YOURSELF.":isDeload?"RECOVER HARDER.":(phase?.label.split("—")[1].trim()??"BUILD")+"."}</span>
+            </h1>
+          </div>
+          {/* Readiness button */}
+          <button onClick={()=>setShowReadiness(true)} style={{background:todayReadiness?`${todayReadiness.avg>=4?"#47FFB8":todayReadiness.avg>=3?"#E8FF47":todayReadiness.avg>=2?"#FFB347":"#FF4747"}15`:"#141414",border:`1px solid ${todayReadiness?todayReadiness.avg>=4?"#47FFB840":todayReadiness.avg>=3?"#E8FF4740":todayReadiness.avg>=2?"#FFB34740":"#FF474740":"#222"}`,borderRadius:10,padding:"8px 10px",cursor:"pointer",textAlign:"left",minWidth:60}}>
+            <div style={{fontSize:16,textAlign:"center"}}>{todayReadiness?["😖","😤","😐","😊","🤩"][Math.round(todayReadiness.avg)-1]:"💤"}</div>
+            <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#444",textAlign:"center",marginTop:2,letterSpacing:1}}>{todayReadiness?`${todayReadiness.avg}/5`:"CHECK IN"}</div>
+          </button>
+        </div>
+
+        {/* Weekly intention */}
+        <div style={{background:"#141414",borderRadius:8,padding:"10px 12px",marginTop:12,borderLeft:`3px solid ${phase?.color??"#E8FF47"}`}}>
+          <div style={{fontSize:8,color:"#444",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:3}}>WEEK {wkNum} INTENTION</div>
+          <div style={{fontSize:12,color:"#bbb",fontFamily:"'DM Mono',monospace",lineHeight:1.5,fontStyle:"italic"}}>"{INTENTIONS[week]}"</div>
+        </div>
+
+        {/* Phase bar */}
+        <div style={{display:"flex",gap:0,marginTop:12,borderRadius:6,overflow:"hidden"}}>
+          {phases.map(ph=>(
+            <div key={ph.label} style={{flex:1,padding:"5px 0 5px 8px",background:ph.weeks.includes(wkNum)?`${ph.color}20`:"#141414",borderBottom:ph.weeks.includes(wkNum)?`2px solid ${ph.color}`:"2px solid #1e1e1e"}}>
+              <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:1,color:ph.weeks.includes(wkNum)?ph.color:"#444"}}>{ph.label.split("—")[1].trim()} {ph.weeks[0]}–{ph.weeks[ph.weeks.length-1]}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* OVERALL PROGRESS */}
+        <div style={{marginTop:12,background:"#141414",borderRadius:8,padding:"12px 14px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
+            <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#666"}}>OVERALL PROGRESS</span>
+            <div style={{display:"flex",gap:10,alignItems:"baseline"}}>
+              <span style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:pct===100?"#47FFB8":phase?.color??"#E8FF47",letterSpacing:1}}>{done} / {TOTAL_SESSIONS}</span>
+              {missedCount>0&&<span style={{fontFamily:"'Pirata One',cursive",fontSize:13,color:"#FF4747",letterSpacing:1}}>{missedCount} missed</span>}
+            </div>
+          </div>
+          <div style={{height:8,background:"#222",borderRadius:4,overflow:"hidden",position:"relative"}}>
+            {phases.map((ph,i)=>{
+              const pt=ph.weeks.reduce((a,w)=>a+wkTotal(w-1),0);
+              const pd=ph.weeks.reduce((a,w)=>a+wkDone(w-1),0);
+              const pm=ph.weeks.reduce((a,w)=>a+wkMissed(w-1),0);
+              const off=phases.slice(0,i).reduce((a,p2)=>a+(p2.weeks.reduce((b,w)=>b+wkTotal(w-1),0)/TOTAL_SESSIONS)*100,0);
+              const segW=(pt/TOTAL_SESSIONS)*100;
+              const donePct=Math.min((pd/pt)*100,100);
+              const missPct=Math.min((pm/pt)*100,100-donePct);
+              return(<div key={ph.label} style={{position:"absolute",top:0,bottom:0,left:`${off}%`,width:`${segW}%`,background:"#1c1c1c"}}>
+                <div style={{position:"absolute",top:0,bottom:0,left:0,width:`${donePct}%`,background:ph.color,borderRadius:4,transition:"width 0.4s"}}/>
+                <div style={{position:"absolute",top:0,bottom:0,left:`${donePct}%`,width:`${missPct}%`,background:"#FF4747",opacity:0.75,transition:"width 0.4s"}}/>
+              </div>);
+            })}
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:6,flexWrap:"wrap",gap:4}}>
+            <div style={{display:"flex",gap:10}}>
+              <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555"}}>{pct}% done</span>
+              {missedCount>0&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FF4747"}}>{missedPct}% missed</span>}
+            </div>
+            {pct===100&&missedCount===0?<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#47FFB8"}}>🏁 PLAN COMPLETE</span>:<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333"}}>{TOTAL_SESSIONS-done-missedCount} remaining</span>}
+          </div>
+        </div>
+        {(isDeload||isPeak)&&<div style={{marginTop:8,display:"inline-block",fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isPeak?"#FF6B47":"#47C8FF",border:`1px solid ${isPeak?"#FF6B4740":"#47C8FF40"}`,padding:"3px 9px",borderRadius:4}}>{isPeak?"🏁 TAPER + 5K TEST — TARGET SUB 23:00":"♻️ DELOAD — 30% VOLUME REDUCTION"}</div>}
+      </div>
+
+      {/* WEEK SELECTOR */}
+      <div style={{padding:"10px 20px 12px",borderBottom:"1px solid #1e1e1e"}}>
+        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#444",marginBottom:7}}>SELECT WEEK</div>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+          {Array.from({length:12},(_,i)=>{
+            const w=i+1,isA=w===wkNum,dl=w===4||w===8,pk=w===12;
+            const ph=phases.find(p=>p.weeks.includes(w));
+            const d2=wkDone(i),m2=wkMissed(i),t=wkTotal(i),allActioned=(d2+m2)===t&&t>0,allD=d2===t&&t>0;
+            return(<button key={w} onClick={()=>{setWeek(i);setDayIdx(0);}} style={{width:36,height:36,borderRadius:6,border:"none",position:"relative",background:isA?(ph?.color??"#E8FF47"):allD?"#47FFB820":allActioned?"#FF474718":dl?"#47C8FF15":pk?"#FF6B4715":"#141414",color:isA?"#080808":allD?"#47FFB8":allActioned?"#FF8888":dl?"#47C8FF":pk?"#FF6B47":"#777",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:15,outline:isA?"none":allD?"1px solid #47FFB850":allActioned?"1px solid #FF474740":"1px solid #222",transition:"all 0.15s"}}>
+              {w}
+              {allD&&!isA&&<div style={{position:"absolute",top:2,right:2,width:6,height:6,borderRadius:"50%",background:"#47FFB8"}}/>}
+              {!allD&&m2>0&&!isA&&<div style={{position:"absolute",top:2,right:2,width:6,height:6,borderRadius:"50%",background:"#FF4747"}}/>}
+            </button>);
+          })}
+        </div>
+        <div style={{marginTop:8,fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>
+          {phase?.desc}&nbsp;·&nbsp;<span style={{color:wkDone(week)===wkTotal(week)&&wkTotal(week)>0?"#47FFB8":wkMissed(week)>0?"#FF8888":"#555"}}>Week {wkNum}: {wkDone(week)}/{wkTotal(week)} done{wkMissed(week)>0?` · ${wkMissed(week)} missed`:""}</span>
+        </div>
+      </div>
+
+      {/* TABS */}
+      <div style={{display:"flex",borderBottom:"1px solid #1e1e1e",overflowX:"auto",scrollbarWidth:"none"}}>
+        {tabs.map(([key,lbl])=>(
+          <button key={key} onClick={()=>setView(key)} style={{flex:"0 0 auto",padding:"10px 12px",background:"none",border:"none",borderBottom:view===key?`2px solid ${phase?.color??"#E8FF47"}`:"2px solid transparent",color:view===key?"#f0f0f0":"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:1.5,whiteSpace:"nowrap",transition:"color 0.15s"}}>{lbl}</button>
+        ))}
+      </div>
+
+      {/* TRAINING TAB */}
+      {view==="training"&&(
+        <>
+          <div style={{display:"flex",overflowX:"auto",padding:"12px 20px 0",gap:6,scrollbarWidth:"none"}}>
+            {wkData.map((d,di)=>{
+              const isA=di===dayIdx,main=T[d.sessions[0].type];
+              const dd=d.sessions.filter((_,si)=>checked[sKey(week,di,si)]).length;
+              const dm=d.sessions.filter((_,si)=>missed[sKey(week,di,si)]).length;
+              const allD=dd===d.sessions.length;
+              const anyMissed=dm>0&&!allD;
+              const allActioned=(dd+dm)===d.sessions.length&&!allD;
+              return(<button key={d.day} onClick={()=>setDayIdx(di)} style={{flex:"0 0 auto",padding:"8px 11px",borderRadius:7,position:"relative",border:isA?`1px solid ${main.color}`:allD?"1px solid #47FFB850":anyMissed?"1px solid #FF474750":"1px solid #222",background:isA?`${main.color}18`:allD?"#47FFB812":anyMissed?"#FF474710":"#111",cursor:"pointer",transition:"all 0.15s"}}>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isA?main.color:allD?"#47FFB8":anyMissed?"#FF8888":"#666"}}>{d.day}</div>
+                <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",marginTop:1,color:isA?"#ccc":allD?"#47FFB870":anyMissed?"#FF474780":"#333"}}>{allD?"✓ DONE":anyMissed?`${dm} MISSED`:d.sessions.map(s=>T[s.type].label).join("+")}</div>
+                {d.sessions.length>1&&!allD&&!anyMissed&&<div style={{position:"absolute",top:3,right:3,width:4,height:4,borderRadius:"50%",background:"#E8FF47"}}/>}
+              </button>);
+            })}
+          </div>
+          <div style={{padding:"14px 20px 0"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
+              <div>
+                <div style={{fontFamily:"'Pirata One',cursive",fontSize:26,letterSpacing:2}}>{dayData.label}</div>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",letterSpacing:2}}>{dayData.theme.toUpperCase()}</div>
+              </div>
+              {dayData.sessions.length>1&&<span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#E8FF47",border:"1px solid #E8FF4740",padding:"3px 7px",borderRadius:3}}>DOUBLE DAY</span>}
+            </div>
+            {dayData.sessions.some(s=>s.type==="run")&&(
+              <MobilityPanel type="preRun" title="PRE-RUN" color="#E8FF47"/>
+            )}
+            {dayData.sessions.map((s,si)=>(
+              <SessionCard key={si} s={s} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed}
+                onLog={()=>setLogModal({session:s,key:`log-${week}-${dayIdx}-${si}`})} logData={sessionLogs[`log-${week}-${dayIdx}-${si}`]}/>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* NUTRITION TAB */}
+      {view==="nutrition"&&(
+        <>
+          {/* Day selector */}
+          <div style={{display:"flex",overflowX:"auto",padding:"12px 20px 0",gap:6,scrollbarWidth:"none"}}>
+            {wkData.map((d,di)=>{const isA=di===dayIdx,main=T[d.sessions[0].type];return(
+              <button key={d.day} onClick={()=>setDayIdx(di)} style={{flex:"0 0 auto",padding:"8px 11px",borderRadius:7,border:isA?`1px solid ${main.color}`:"1px solid #222",background:isA?`${main.color}18`:"#111",cursor:"pointer"}}>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isA?main.color:"#666"}}>{d.day}</div>
+              </button>
+            );})}
+          </div>
+          <div style={{padding:"14px 20px 0"}}>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:24,letterSpacing:2,marginBottom:2}}>{dayData.label} — Fuel Plan</div>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555",letterSpacing:2,marginBottom:12}}>{dayData.theme.toUpperCase()} · WEEK {wkNum}</div>
+
+            {/* Session summary chips */}
+            <div style={{display:"flex",gap:5,marginBottom:14,flexWrap:"wrap"}}>
+              {dayData.sessions.map((s,i)=>{const cfg=T[s.type];return(
+                <div key={i} style={{background:`${cfg.color}10`,border:`1px solid ${cfg.color}22`,borderRadius:6,padding:"5px 10px"}}>
+                  <div style={{fontSize:8,color:cfg.color,fontFamily:"'DM Mono',monospace",letterSpacing:1}}>{s.slot} {s.time!=="-"?s.time:""}</div>
+                  <div style={{fontSize:11,color:"#ccc",fontFamily:"'Pirata One',cursive",letterSpacing:1}}>{s.title}</div>
+                </div>
+              );})}
+            </div>
+
+            {/* Macros targets */}
+            {(()=>{
+              const isDouble=dayData.sessions.length>1&&dayData.sessions[0].type!=="rest";
+              const isLong=dayData.sessions.some(s=>s.title&&s.title.includes("Long"));
+              const isRest=dayData.sessions.every(s=>s.type==="rest");
+              const kcal=isDeload?2400:isRest?2000:isDouble?3000:isLong?2800:2600;
+              const prot=Math.round(76*1.8);
+              const carb=isDeload?260:isRest?180:isDouble?380:isLong?340:300;
+              const fat=isRest?80:75;
+              const water=isRest?2.5:isDouble?3.5:isLong?3.5:3.0;
+              const macros=[
+                {label:"PROTEIN",val:prot+"g",target:"1.8g/kg",color:"#47C8FF",pct:100},
+                {label:"CARBS",val:carb+"g",target:isDouble?"High day":isLong?"High day":isRest?"Low day":"Moderate",color:"#E8FF47",pct:isRest?50:isDouble?100:75},
+                {label:"FAT",val:fat+"g",target:"~75g",color:"#FF8C47",pct:fat/90*100},
+                {label:"CALORIES",val:kcal+"kcal",target:"~target",color:"#47FFB8",pct:Math.min((kcal/3200)*100,100)},
+              ];
+              return(
+                <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
+                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:phase?.color??"#E8FF47",marginBottom:10}}>DAILY TARGETS</div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+                    {macros.map(m=>(
+                      <div key={m.label} style={{flex:"1 0 auto",minWidth:70,background:`${m.color}08`,border:`1px solid ${m.color}20`,borderRadius:8,padding:"8px 10px"}}>
+                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#555",letterSpacing:1,marginBottom:3}}>{m.label}</div>
+                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:m.color,lineHeight:1}}>{m.val}</div>
+                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:2}}>{m.target}</div>
+                        <div style={{height:3,background:"#222",borderRadius:2,marginTop:6}}>
+                          <div style={{height:"100%",width:`${Math.min(m.pct,100)}%`,background:m.color,borderRadius:2}}/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Hydration */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderTop:"1px solid #1e1e1e"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:14}}>💧</span>
+                      <div>
+                        <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555",letterSpacing:2}}>HYDRATION TARGET</div>
+                        <div style={{fontSize:11,fontFamily:"'DM Mono',monospace",color:"#888"}}>{isDouble?"Add 500ml per session on top":"Sip consistently — don't front-load"}</div>
+                      </div>
+                    </div>
+                    <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:"#47C8FF"}}>{water}L</div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Supplements */}
+            {(()=>{
+              const hasRun=dayData.sessions.some(s=>s.type==="run");
+              const hasGym=dayData.sessions.some(s=>s.type==="gym");
+              const isRest=dayData.sessions.every(s=>s.type==="rest");
+              const supps=[];
+              if(!isRest) supps.push({time:"Morning",name:"Creatine",dose:"5g",note:"With breakfast — consistency matters more than timing",color:"#47C8FF"});
+              if(hasRun||hasGym) supps.push({time:"30 min pre",name:"Caffeine",dose:"1-2 cups coffee",note:"~3mg/kg. Cut off by 14:00 to protect sleep",color:"#E8FF47"});
+              if(dayData.sessions.length>1) supps.push({time:"Between sessions",name:"Electrolytes",dose:"500ml + pinch salt",note:"Sodium, potassium — especially in summer",color:"#FF8C47"});
+              if(hasRun&&(dayData.sessions[0].duration||"").includes("50")||dayData.sessions[0].type==="run"&&parseInt(dayData.sessions[0].duration)>=50) supps.push({time:"During run",name:"Carb fuel",dose:"Date or gel if >45 min",note:"Simple carbs every 45 min on intervals or long efforts",color:"#47FFB8"});
+              if(supps.length===0) return null;
+              return(
+                <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
+                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47C8FF",marginBottom:10}}>SUPPLEMENTS & TIMING</div>
+                  {supps.map((s,i)=>(
+                    <div key={i} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:i<supps.length-1?"1px solid #1e1e1e":"none"}}>
+                      <div style={{minWidth:70}}>
+                        <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:s.color,letterSpacing:1}}>{s.time.toUpperCase()}</div>
+                        <div style={{fontSize:11,fontFamily:"'Pirata One',cursive",color:s.color,letterSpacing:1}}>{s.dose}</div>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:11,color:"#ccc",fontFamily:"'Barlow',sans-serif",fontWeight:500}}>{s.name}</div>
+                        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{s.note}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Meal timeline */}
+            <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47FFB8",marginBottom:10}}>MEAL TIMING</div>
+              {dayData.nutrition.map((n,i)=>(
+                <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"8px 0",borderBottom:i<dayData.nutrition.length-1?"1px solid #1e1e1e":"none"}}>
+                  <div style={{minWidth:46}}>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:n.color}}>{n.time}</div>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#444",marginBottom:2}}>{n.label.toUpperCase()}</div>
+                    <div style={{fontSize:12,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{n.food}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Meal prep tip */}
+            <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#FF8C47",marginBottom:8}}>MEAL PREP</div>
+              {[
+                {day:0,tip:"Sunday batch: cook 200g rice, boil 6 eggs, prep overnight oats for Mon-Tue mornings"},
+                {day:1,tip:"Today: portion chicken thighs for Tue-Wed. Hard boil eggs if running low."},
+                {day:2,tip:"Wed eve: make a big lentil soup batch — covers Thu lunch and Fri lunch too"},
+                {day:3,tip:"Thu: defrost any frozen protein for Fri. Check you have bananas for tomorrow's pre-run fuel"},
+                {day:4,tip:"Fri eve: overnight oats + banana ready for Saturday long run morning"},
+                {day:5,tip:"After long run: cook extra rice and sweet potato — this fuels your recovery for 24hrs"},
+                {day:6,tip:"Today: plan and prep for the week ahead. Batch cook rice, portion proteins, get oat milk in"},
+              ][dayIdx]&&<div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>
+                {[
+                  "Sunday batch: cook 200g rice, boil 6 eggs, prep overnight oats for Mon-Tue mornings",
+                  "Today: portion chicken thighs for Tue-Wed. Hard boil eggs if running low.",
+                  "Wed eve: make a big lentil soup batch — covers Thu lunch and Fri lunch too",
+                  "Thu: defrost any frozen protein for Fri. Check you have bananas for tomorrow's pre-run fuel",
+                  "Fri eve: overnight oats + banana ready for Saturday long run morning",
+                  "After long run: cook extra rice and sweet potato — fuels your recovery for 24hrs",
+                  "Today: plan and prep for the week ahead. Batch cook rice, portion proteins, get oat milk in",
+                ][dayIdx]}
+              </div>}
+            </div>
+
+            {/* Phase fuel note */}
+            <div style={{padding:"12px 14px",background:`${phase?.color??"#E8FF47"}08`,border:`1px solid ${phase?.color??"#E8FF47"}20`,borderRadius:10,marginBottom:16}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:phase?.color??"#E8FF47",marginBottom:5}}>WEEK {wkNum} FUEL NOTE</div>
+              <div style={{fontSize:11,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>
+                {isDeload?"Deload week — reduce carbs 15-20%. Keep protein at 1.8g/kg body weight. Prioritise sleep over everything."
+                :isPeak?"Taper week — carb load Thu-Sat evenings (rice, pasta, sweet potato). Big breakfast before 5K. No new foods on test day."
+                :wkNum<=3?"Foundation — consistent eating over perfection. Hit your protein daily. Carbs around every session."
+                :wkNum<=7?"Development — add 300-400 kcal on double days. Carb load the night before hard sessions."
+                :"Sharpening — precision now matters. Time carbs tightly. Electrolytes on doubles. Nothing heavy within 2hrs of training."}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+
+      {/* PACES TAB */}
+      {view==="paces"&&(
+        <div style={{padding:"16px 20px 0"}}>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>Your Training Paces</div>
+          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",letterSpacing:2,marginBottom:14}}>BASED ON HM PB 1:43:00 · EASY PACE 6:00/KM</div>
+          <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+            {[{label:"HM PB",value:"1:43:00",sub:"4:53/km",color:"#FFB347"},{label:"5K Equiv",value:"~22:45",sub:"4:33/km",color:"#FF6B47"},{label:"10K Equiv",value:"~47:30",sub:"4:45/km",color:"#FF8C47"}].map(s=>(
+              <div key={s.label} style={{flex:"1 0 auto",background:`${s.color}15`,border:`1px solid ${s.color}35`,borderRadius:8,padding:"10px 12px"}}>
+                <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:s.color,letterSpacing:1}}>{s.value}</div>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",letterSpacing:1}}>{s.label}</div>
+                <div style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"#777",marginTop:2}}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{background:"#141414",borderRadius:10,overflow:"hidden",marginBottom:16}}>
+            {Object.entries(PACES).map(([key,p],i,arr)=>(
+              <div key={key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 14px",borderBottom:i<arr.length-1?"1px solid #1e1e1e":"none"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:p.color}}/>
+                  <span style={{fontSize:12,color:"#ccc",fontFamily:"'Barlow',sans-serif"}}>{p.label}</span>
+                </div>
+                <span style={{fontSize:13,fontFamily:"'DM Mono',monospace",color:p.color,letterSpacing:0.5}}>{p.pace}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#E8FF47",marginBottom:10}}>PACE PROGRESSION TARGETS</div>
+            {[{phase:"Phase 1 (Wk 1–3)",reps:"4:25–4:30/km",tempo:"5:05–5:15/km",oneK:"4:45/km",color:"#E8FF47"},{phase:"Phase 2 (Wk 5–7)",reps:"4:22–4:27/km",tempo:"5:05–5:10/km",oneK:"4:42/km",color:"#47C8FF"},{phase:"Phase 3 (Wk 9–11)",reps:"4:18–4:23/km",tempo:"5:00–5:05/km",oneK:"4:38/km",color:"#FF6B47"},{phase:"Week 12 Target",reps:"5K all out",tempo:"Sub 23:00",oneK:"4:33–4:38/km",color:"#FFB347"}].map((row,i)=>(
+              <div key={i} style={{padding:"8px 0",borderBottom:i<3?"1px solid #1e1e1e":"none"}}>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:row.color,marginBottom:5}}>{row.phase.toUpperCase()}</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {[["400m",row.reps],["Tempo",row.tempo],["1K",row.oneK]].map(([lbl,val])=>(
+                    <span key={lbl} style={{fontSize:10,fontFamily:"'DM Mono',monospace",background:`${row.color}15`,border:`1px solid ${row.color}35`,borderRadius:4,padding:"2px 8px",color:row.color}}>{lbl}: {val}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:"12px 14px",background:"#E8FF4710",border:"1px solid #E8FF4725",borderRadius:10,marginBottom:16}}>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#E8FF47",marginBottom:6}}>HOW TO USE</div>
+            <div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.8}}>Easy pace is non-negotiable — 6:00/km means 6:00/km. Running easy days faster kills quality sessions. Speed targets are ceilings not floors — aim to negative-split every rep set.</div>
+          </div>
+        </div>
+      )}
+
+      {/* OVERVIEW TAB */}
+      {view==="overview"&&(
+        <div style={{padding:"16px 20px 0"}}>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:14}}>12-Week Map</div>
+          {phases.map(ph=>(
+            <div key={ph.label} style={{marginBottom:18}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:ph.color,marginBottom:8}}>{ph.label}</div>
+              <div style={{fontSize:10,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginBottom:8}}>{ph.desc}</div>
+              {ph.weeks.map(w=>{
+                const dl=w===4||w===8,pk=w===12,d2=wkDone(w-1),m2=wkMissed(w-1),t=wkTotal(w-1),allD=d2===t&&t>0,hasMissed=m2>0;
+                return(<button key={w} onClick={()=>{setWeek(w-1);setDayIdx(0);setView("training");}} style={{display:"block",width:"100%",marginBottom:5,background:dl?"#47C8FF0a":pk?"#FF6B470a":"#111",border:`1px solid ${allD?"#47FFB840":hasMissed?"#FF474730":dl?"#47C8FF25":pk?"#FF6B4725":"#1e1e1e"}`,borderLeft:`3px solid ${allD?"#47FFB8":hasMissed?"#FF4747":dl?"#47C8FF":pk?"#FF6B47":ph.color}`,borderRadius:8,padding:"10px 14px",cursor:"pointer",textAlign:"left"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div style={{fontFamily:"'Pirata One',cursive",fontSize:17,color:allD?"#47FFB8":hasMissed?"#FF8888":"#e0e0e0",letterSpacing:1}}>Week {w} {dl?"— DELOAD":pk?"— PEAK & TEST":""} {allD?"✓":""}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:allD?"#47FFB8":hasMissed?"#FF8888":"#555"}}>{d2}/{t}{m2>0?` · ${m2}✕`:""}</div>
+                      <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#333"}}>TAP →</div>
+                    </div>
+                  </div>
+                  <div style={{height:3,background:"#1e1e1e",borderRadius:2,marginTop:6,overflow:"hidden",position:"relative"}}>
+                    <div style={{position:"absolute",top:0,bottom:0,left:0,width:`${t>0?(d2/t)*100:0}%`,background:allD?"#47FFB8":ph.color,borderRadius:2,transition:"width 0.3s"}}/>
+                    <div style={{position:"absolute",top:0,bottom:0,left:`${t>0?(d2/t)*100:0}%`,width:`${t>0?(m2/t)*100:0}%`,background:"#FF4747",opacity:0.7,transition:"width 0.3s"}}/>
+                  </div>
+                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:5,lineHeight:1.5}}>
+                    {dl?"Volume -30% · Easy paces · Full recovery":pk?"Taper · Tune-up Fri · Shakeout Sat · 5K all-out Sun sub-23:00":w<=3?"400m @ 4:25–4:30 · Tempo 5:05–5:15 · Long 75 min":w<=7?"400m @ 4:22–4:27 · Tempo 5:05–5:10 · Long 90 min":"400m @ 4:18–4:23 · Tempo 5:00–5:05 · Long 100 min"}
+                  </div>
+                </button>);
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {view==="race"&&<RaceDayTab/>}
+      {view==="next"&&<PostPlanTab/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
