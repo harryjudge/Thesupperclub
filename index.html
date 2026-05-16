@@ -15,6 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.2/confetti.browser.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#0a0a0a;color:#f0f0f0;-webkit-tap-highlight-color:transparent}
@@ -28,6 +29,11 @@ input[type=text],textarea{background:#1a1a1a;border:1px solid #2a2a2a;border-rad
 input[type=text]:focus,textarea:focus{border-color:#444}
 @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tickBounce{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
+@keyframes cardSlide{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.card-enter{animation:cardSlide 0.2s ease}
+input[type=date]{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;width:100%;outline:none}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:0.4}
 </style>
 </head>
 <body>
@@ -60,6 +66,24 @@ const phases=[
 ];
 
 // ── WEEKLY INTENTIONS ──────────────────────────────────────────────
+
+// ── NEW CONSTANTS ──────────────────────────────────────────────────
+const INJURY_ZONES=["Left hamstring","Right hamstring","Left calf","Right calf","Left knee","Right knee","Lower back","Hip flexor","Achilles","Shoulder"];
+const INJURY_SESSION_MAP={"Left hamstring":["run","gym"],"Right hamstring":["run","gym"],"Left calf":["run"],"Right calf":["run"],"Left knee":["run","gym"],"Right knee":["run","gym"],"Lower back":["gym","run"],"Hip flexor":["run","gym"],"Achilles":["run"],"Shoulder":["gym","swim"]};
+const WEATHER_OPTIONS=["☀️ Sunny","🌤 Mild","🌧 Rainy","🌬 Windy","🥵 Hot","🥶 Cold","🌫 Humid"];
+
+// ── THEME CONFIGS ──────────────────────────────────────────────────
+const THEMES={
+  dark:{bg:"#0a0a0a",bg2:"#111",card:"#141414",border:"#1e1e1e",text:"#f0f0f0",muted:"#888",dim:"#555",vdim:"#333",accent:"#E8FF47",name:"dark"},
+  amber:{bg:"#080500",bg2:"#100900",card:"#160e00",border:"#2a1f00",text:"#f5e6c0",muted:"#a08060",dim:"#7a6040",vdim:"#4a3820",accent:"#ffb000",name:"amber"},
+};
+
+// ── UTILITIES ──────────────────────────────────────────────────────
+function paceToSecs(str){if(!str)return null;const m=str.match(/(\d+):(\d+)/);return m?parseInt(m[1])*60+parseInt(m[2]):null;}
+function secsToStr(s){return`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;}
+function addDays(date,n){const d=new Date(date);d.setDate(d.getDate()+n);return d;}
+function fmtDate(d){return d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});}
+
 const INTENTIONS=[
   "Trust the easy pace. Run slow to run fast.",
   "Consistency beats intensity. Show up every day.",
@@ -370,6 +394,74 @@ function Slider({value,onChange,min=1,max=5,color="#E8FF47",labels}){
   );
 }
 
+
+// ── CALENDAR SETUP MODAL ──────────────────────────────────────────
+function CalendarSetupModal({onSave}){
+  const today=new Date();
+  const day=today.getDay();
+  const daysToMon=day===0?1:day===1?0:8-day;
+  const defaultMon=addDays(today,daysToMon);
+  const[selDate,setSelDate]=useState(defaultMon);
+  const[calMonth,setCalMonth]=useState(new Date(defaultMon.getFullYear(),defaultMon.getMonth(),1));
+  const daysInMonth=(y,m)=>new Date(y,m+1,0).getDate();
+  const firstDow=(y,m)=>(new Date(y,m,1).getDay()+6)%7;
+  const y=calMonth.getFullYear(),m=calMonth.getMonth();
+  const totalDays=daysInMonth(y,m);
+  const startDow=firstDow(y,m);
+  const cells=[];
+  for(let i=0;i<startDow;i++)cells.push(null);
+  for(let d=1;d<=totalDays;d++)cells.push(new Date(y,m,d));
+  const isSel=d=>d&&d.toDateString()===selDate.toDateString();
+  const isMon=d=>d&&d.getDay()===1;
+  const monthName=calMonth.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{width:"100%",maxWidth:360,background:"#111",borderRadius:16,padding:24,animation:"slideIn 0.3s ease"}}>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:26,letterSpacing:2,marginBottom:4}}>Start Date</div>
+        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>SELECT THE MONDAY WEEK 1 BEGINS</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()-1,1))} style={{background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:6,color:"#888",cursor:"pointer",padding:"6px 14px",fontFamily:"'DM Mono',monospace",fontSize:16}}>‹</button>
+          <span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"#f0f0f0",letterSpacing:1}}>{monthName}</span>
+          <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()+1,1))} style={{background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:6,color:"#888",cursor:"pointer",padding:"6px 14px",fontFamily:"'DM Mono',monospace",fontSize:16}}>›</button>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+          {["M","T","W","T","F","S","S"].map((d,i)=>(
+            <div key={i} style={{textAlign:"center",fontSize:9,color:"#444",fontFamily:"'DM Mono',monospace",padding:"4px 0"}}>{d}</div>
+          ))}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:20}}>
+          {cells.map((d,i)=>{
+            const sel=isSel(d),mon=isMon(d);
+            return(
+              <button key={i} onClick={()=>mon&&d&&setSelDate(d)} disabled={!mon||!d} style={{
+                aspectRatio:"1",borderRadius:8,border:"none",
+                background:sel?"#E8FF47":mon&&d?"#1e1e1e":"transparent",
+                color:sel?"#080808":mon&&d?"#f0f0f0":d?"#2a2a2a":"transparent",
+                cursor:mon&&d?"pointer":"default",
+                fontFamily:"'DM Mono',monospace",fontSize:13,
+                outline:mon&&d&&!sel?"1px solid #2a2a2a":"none",
+                fontWeight:sel?"600":"400",transition:"all 0.15s",
+              }}>{d?d.getDate():""}</button>
+            );
+          })}
+        </div>
+        {selDate&&<div style={{background:"#E8FF4715",border:"1px solid #E8FF4730",borderRadius:8,padding:"10px 14px",marginBottom:16}}>
+          <div style={{fontSize:9,color:"#E8FF47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:3}}>WEEK 1 STARTS</div>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:"#f0f0f0",letterSpacing:1}}>
+            Monday {selDate.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+          </div>
+          <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",marginTop:3}}>
+            Plan ends: {addDays(selDate,83).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+          </div>
+        </div>}
+        <button onClick={()=>onSave(selDate.toISOString())} style={{width:"100%",padding:"14px 0",background:"#E8FF47",border:"none",borderRadius:8,color:"#080808",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:18,letterSpacing:2}}>
+          START THE PLAN
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── READINESS CHECK MODAL ──────────────────────────────────────────
 function ReadinessModal({dateKey,existing,onSave,onClose}){
   const[sleep,setSleep]=useState(existing?.sleep||3);
@@ -419,6 +511,7 @@ function SessionLogModal({session,logKey,existing,onSave,onClose}){
   const[pace,setPace]=useState(existing?.pace||"");
   const[rpe,setRpe]=useState(existing?.rpe||session.rpe);
   const[feel,setFeel]=useState(existing?.feel||3);
+  const[weather,setWeather]=useState(existing?.weather||"");
   const[notes,setNotes]=useState(existing?.notes||"");
   const cfg=T[session.type];
   const isGym=session.type==="gym";
@@ -429,6 +522,15 @@ function SessionLogModal({session,logKey,existing,onSave,onClose}){
       <div style={{width:"100%",background:"#111",borderRadius:"16px 16px 0 0",padding:24,maxHeight:"85vh",overflowY:"auto",animation:"slideIn 0.2s ease"}}>
         <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,color:cfg.color,marginBottom:4}}>Log Session</div>
         <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>{session.title.toUpperCase()}</div>
+        {/* Weather */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>CONDITIONS</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {WEATHER_OPTIONS.map(w=>(
+              <button key={w} onClick={()=>setWeather(weather===w?"":w)} style={{padding:"5px 9px",borderRadius:6,border:`1px solid ${weather===w?cfg.color:"#2a2a2a"}`,background:weather===w?`${cfg.color}20`:"#1a1a1a",color:weather===w?cfg.color:"#555",cursor:"pointer",fontSize:12,fontFamily:"'DM Mono',monospace"}}>{w}</button>
+            ))}
+          </div>
+        </div>
         {!isGym&&(
           <div style={{marginBottom:16}}>
             <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>ACTUAL PACE (optional)</div>
@@ -466,7 +568,7 @@ function SessionLogModal({session,logKey,existing,onSave,onClose}){
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>Cancel</button>
-          <button onClick={()=>onSave({pace,rpe,feel,notes,weights:weights2})} style={{flex:2,padding:"12px 0",background:`${cfg.color}20`,border:`1px solid ${cfg.color}50`,borderRadius:8,color:cfg.color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>SAVE LOG</button>
+          <button onClick={()=>onSave({pace,rpe,feel,weather,notes,weights:weights2})} style={{flex:2,padding:"12px 0",background:`${cfg.color}20`,border:`1px solid ${cfg.color}50`,borderRadius:8,color:cfg.color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>SAVE LOG</button>
         </div>
       </div>
     </div>
@@ -520,70 +622,223 @@ function CooldownPanel({type,color}){
   );
 }
 
-// ── SESSION CARD ───────────────────────────────────────────────────
-function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logData}){
+// ── SESSION CARD (collapsible + injury aware) ────────────────────
+function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logData,injuryFlags}){
+  const[collapsed,setCollapsed]=useState(true);
+  const[tickAnim,setTickAnim]=useState(false);
   const cfg=T[s.type];
   const cardBg=checked?"#0a140a":isMissed?"#1a0a0a":"#141414";
   const borderCol=checked?"#47FFB8":isMissed?"#FF4747":cfg.color;
+  const injuredZones=Object.entries(injuryFlags||{}).filter(([,v])=>v).map(([k])=>k);
+  const hasWarning=injuredZones.some(z=>{const m={"Left hamstring":["run","gym"],"Right hamstring":["run","gym"],"Left calf":["run"],"Right calf":["run"],"Left knee":["run","gym"],"Right knee":["run","gym"],"Lower back":["gym","run"],"Hip flexor":["run","gym"],"Achilles":["run"],"Shoulder":["gym","swim"]};return m[z]&&m[z].includes(s.type);});
+  const handleToggle=()=>{setTickAnim(true);setTimeout(()=>setTickAnim(false),400);onToggle(sessionKey);};
   return(
-    <div style={{background:cardBg,borderRadius:8,marginBottom:8,borderLeft:`3px solid ${borderCol}`,padding:"12px 14px",transition:"all 0.25s",opacity:checked||isMissed?0.85:1}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-        <div style={{flex:1}}>
-          <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
-            <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:checked?"#47FFB8":isMissed?"#FF4747":cfg.color,background:`${checked?"#47FFB8":isMissed?"#FF4747":cfg.color}22`,padding:"2px 7px",borderRadius:3}}>{s.slot}</span>
-            {s.time!=="—"&&<span style={{fontSize:9,color:"#777",fontFamily:"'DM Mono',monospace"}}>{s.time}</span>}
-            <span style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace"}}>{s.duration}</span>
-            {isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:1,color:"#FF4747",background:"#FF474718",padding:"2px 7px",borderRadius:3}}>MISSED</span>}
+    <div style={{background:cardBg,borderRadius:10,marginBottom:8,borderLeft:`3px solid ${borderCol}`,transition:"all 0.25s",opacity:checked||isMissed?0.85:1}}>
+      <div style={{padding:"12px 14px",cursor:!checked&&!isMissed?"pointer":"default"}} onClick={()=>!checked&&!isMissed&&setCollapsed(c=>!c)}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
+              <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:checked?"#47FFB8":isMissed?"#FF4747":cfg.color,background:`${checked?"#47FFB8":isMissed?"#FF4747":cfg.color}22`,padding:"2px 7px",borderRadius:3}}>{s.slot}</span>
+              {s.time&&s.time!=="-"&&s.time!=="—"&&<span style={{fontSize:9,color:"#777",fontFamily:"'DM Mono',monospace"}}>{s.time}</span>}
+              <span style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace"}}>{s.duration}</span>
+              {isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FF4747",background:"#FF474718",padding:"2px 7px",borderRadius:3}}>MISSED</span>}
+              {hasWarning&&!checked&&!isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FFB347",background:"#FFB34720",padding:"2px 7px",borderRadius:3}}>⚠️ INJURY</span>}
+            </div>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:19,letterSpacing:1,color:checked?"#47FFB8":isMissed?"#FF6666":"#f0f0f0",textDecoration:isMissed||checked?"line-through":"none"}}>{cfg.icon} {s.title}</div>
           </div>
-          <div style={{fontFamily:"'Pirata One',cursive",fontSize:19,letterSpacing:1,color:checked?"#47FFB8":isMissed?"#FF6666":"#f0f0f0",textDecoration:isMissed?"line-through":checked?"line-through":"none"}}>{s.title}</div>
-        </div>
-        {/* Done + Missed buttons */}
-        <div style={{display:"flex",gap:6,marginLeft:10,flexShrink:0}}>
-          <button onClick={()=>onToggle(sessionKey)} title="Mark done" style={{width:30,height:30,borderRadius:7,border:`2px solid ${checked?"#47FFB8":"#3a3a3a"}`,background:checked?"#47FFB825":"#1e1e1e",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:14}}>
-            <span style={{color:checked?"#47FFB8":"#444"}}>✓</span>
-          </button>
-          <button onClick={()=>onMiss(sessionKey)} title="Mark missed" style={{width:30,height:30,borderRadius:7,border:`2px solid ${isMissed?"#FF4747":"#3a3a3a"}`,background:isMissed?"#FF474725":"#1e1e1e",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:14}}>
-            <span style={{color:isMissed?"#FF4747":"#444"}}>✕</span>
-          </button>
+          <div style={{display:"flex",gap:5,marginLeft:10,flexShrink:0,alignItems:"center"}}>
+            {!checked&&!isMissed&&<span style={{fontSize:10,color:"#2a2a2a"}}>{collapsed?"▼":"▲"}</span>}
+            <button onClick={e=>{e.stopPropagation();handleToggle();}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${checked?"#47FFB8":"#2a2a2a"}`,background:checked?"#47FFB825":"#1a1a1a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",animation:tickAnim?"tickBounce 0.4s ease":"none",fontSize:15}}>
+              <span style={{color:checked?"#47FFB8":"#444"}}>✓</span>
+            </button>
+            <button onClick={e=>{e.stopPropagation();onMiss(sessionKey);}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${isMissed?"#FF4747":"#2a2a2a"}`,background:isMissed?"#FF474725":"#1a1a1a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:15}}>
+              <span style={{color:isMissed?"#FF4747":"#444"}}>✕</span>
+            </button>
+          </div>
         </div>
       </div>
-      {s.paceKeys&&s.paceKeys.length>0&&(
-        <div style={{display:"flex",gap:5,flexWrap:"wrap",margin:"8px 0 4px"}}>
-          {s.paceKeys.map(k=>{const p=PACES[k];if(!p)return null;return(
-            <span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:10,fontFamily:"'DM Mono',monospace",background:`${p.color}22`,border:`1px solid ${p.color}50`,borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>
-              <span style={{width:6,height:6,borderRadius:"50%",background:p.color,flexShrink:0}}/>
-              <span style={{color:p.color,letterSpacing:0.5}}>{p.pace}</span>
-              <span style={{color:"#666",letterSpacing:1,fontSize:9}}>{p.label.toUpperCase()}</span>
-            </span>
-          );})}
+      {!collapsed&&(
+        <div style={{padding:"0 14px 14px"}}>
+          {hasWarning&&<div style={{background:"#FFB34715",border:"1px solid #FFB34730",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+            <div style={{fontSize:9,color:"#FFB347",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:3}}>INJURY ADVISORY</div>
+            <div style={{fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>You have a flagged niggle that may affect this session. Consider reducing intensity. One modified session beats three missed ones.</div>
+          </div>}
+          {s.longRunData&&(
+            <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+              <div style={{background:"#47FFB815",border:"1px solid #47FFB830",borderRadius:6,padding:"4px 10px",display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:9,color:"#47FFB8",fontFamily:"'DM Mono',monospace"}}>TIME</span><span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"#47FFB8"}}>{s.longRunData.mins} min</span></div>
+              <div style={{background:"#E8FF4715",border:"1px solid #E8FF4730",borderRadius:6,padding:"4px 10px",display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:9,color:"#E8FF47",fontFamily:"'DM Mono',monospace"}}>DIST</span><span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"#E8FF47"}}>~{s.longRunData.km}km</span></div>
+            </div>
+          )}
+          {s.paceKeys&&s.paceKeys.length>0&&(
+            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
+              {s.paceKeys.map(k=>{const p=PACES[k];if(!p)return null;return(
+                <span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:10,fontFamily:"'DM Mono',monospace",background:`${p.color}22`,border:`1px solid ${p.color}50`,borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>
+                  <span style={{width:6,height:6,borderRadius:"50%",background:p.color,flexShrink:0}}/><span style={{color:p.color,letterSpacing:0.5}}>{p.pace}</span><span style={{color:"#666",letterSpacing:1,fontSize:9}}>{p.label.toUpperCase()}</span>
+                </span>
+              );})}
+            </div>
+          )}
+          <ul style={{margin:"0 0 8px",padding:0,listStyle:"none"}}>
+            {s.details.map((d,i)=>(<li key={i} style={{fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",padding:"3px 0",borderBottom:i<s.details.length-1?"1px solid #1e1e1e":"none",lineHeight:1.6}}><span style={{color:cfg.color,marginRight:5}}>›</span>{d}</li>))}
+          </ul>
+          <div style={{display:"flex",gap:3,alignItems:"center",marginTop:6,marginBottom:8}}>
+            <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",marginRight:4,letterSpacing:1}}>RPE</span>
+            {Array.from({length:10}).map((_,i)=>(<div key={i} style={{width:10,height:4,borderRadius:2,background:i<s.rpe?s.rpe>=8?"#E8FF47":s.rpe>=6?"#47C8FF":"#47FFB8":"#2a2a2a"}}/>))}
+            <span style={{fontSize:9,color:"#555",marginLeft:3,fontFamily:"'DM Mono',monospace"}}>{s.rpe}/10</span>
+          </div>
+          {s.preRun&&<MobilityPanel type="preRun" title="PRE-RUN" color={cfg.color}/>}
+          {s.cooldown&&<CooldownPanel type={s.cooldown} color={cfg.color}/>}
+          {s.mobility&&<MobilityPanel type={s.mobility} title={s.type==="gym"?"POST-GYM MOBILITY":"POST-RUN MOBILITY"} color={cfg.color}/>}
+          <div style={{display:"flex",gap:8,marginTop:10,alignItems:"center"}}>
+            <button onClick={onLog} style={{flex:1,padding:"8px 0",background:logData?"#47FFB815":"#1a1a1a",border:`1px solid ${logData?"#47FFB840":"#2a2a2a"}`,borderRadius:6,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,color:logData?"#47FFB8":"#666",letterSpacing:1}}>
+              {logData?"✓ LOGGED — TAP TO EDIT":"📝 LOG THIS SESSION"}
+            </button>
+            {logData&&<div style={{fontSize:11}}>{["","😖","😤","😐","😊","🤩"][logData.feel]}{logData.weather?" "+logData.weather.split(" ")[0]:""}</div>}
+          </div>
+          {logData?.pace&&<div style={{fontSize:10,color:"#777",fontFamily:"'DM Mono',monospace",marginTop:4}}>Pace: {logData.pace}</div>}
+          {logData?.notes&&<div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",marginTop:2,lineHeight:1.5}}>"{logData.notes}"</div>}
         </div>
       )}
-      <ul style={{margin:"8px 0 0",padding:0,listStyle:"none"}}>
-        {s.details.map((d,i)=>(
-          <li key={i} style={{fontSize:11,color:checked?"#4a5e4a":"#888",fontFamily:"'DM Mono',monospace",padding:"3px 0",borderBottom:i<s.details.length-1?"1px solid #1e1e1e":"none",lineHeight:1.6}}>
-            <span style={{color:checked?"#47FFB8":cfg.color,marginRight:5}}>›</span>{d}
-          </li>
-        ))}
-      </ul>
-      <div style={{display:"flex",gap:3,alignItems:"center",marginTop:6}}>
-        <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",marginRight:4,letterSpacing:1}}>RPE</span>
-        {Array.from({length:10}).map((_,i)=>(
-          <div key={i} style={{width:10,height:4,borderRadius:2,background:i<s.rpe?s.rpe>=8?"#E8FF47":s.rpe>=6?"#47C8FF":"#47FFB8":"#2a2a2a"}}/>
-        ))}
-        <span style={{fontSize:9,color:"#555",marginLeft:3,fontFamily:"'DM Mono',monospace"}}>{s.rpe}/10</span>
+      {collapsed&&logData&&(
+        <div style={{padding:"0 14px 10px",display:"flex",gap:8,alignItems:"center"}}>
+          <span style={{fontSize:10,color:"#47FFB8",fontFamily:"'DM Mono',monospace"}}>✓ Logged</span>
+          {logData.pace&&<span style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace"}}>· {logData.pace}</span>}
+          {logData.weather&&<span style={{fontSize:12}}>{logData.weather.split(" ")[0]}</span>}
+          <button onClick={e=>{e.stopPropagation();onLog();}} style={{marginLeft:"auto",fontSize:9,color:"#444",background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Mono',monospace"}}>edit</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── STATS TAB ─────────────────────────────────────────────────────
+function StatsTab({sessionLogs,fiveKTimes,setFiveKTimes}){
+  const[paceInput,setPaceInput]=useState("");
+  const[paceResult,setPaceResult]=useState(null);
+  const[newTime,setNewTime]=useState("");
+  const[newWk,setNewWk]=useState(1);
+
+  const prs=React.useMemo(()=>{
+    let fastest=null;
+    const heaviest={};
+    Object.values(sessionLogs).forEach(log=>{
+      if(log.pace){const s=paceToSecs(log.pace);if(s&&(!fastest||s<fastest))fastest=s;}
+      if(log.weights){Object.entries(log.weights).forEach(([ex,val])=>{const kg=parseFloat(val);if(!isNaN(kg)&&(!heaviest[ex]||kg>heaviest[ex]))heaviest[ex]=kg;});}
+    });
+    return{fastest,heaviest};
+  },[sessionLogs]);
+
+  const calcPace=()=>{
+    const s=paceToSecs(paceInput);
+    if(!s){setPaceResult({error:"Enter pace as m:ss e.g. 4:28"});return;}
+    const lo=paceToSecs("4:25"),hi=paceToSecs("4:30");
+    const mid=(lo+hi)/2;
+    const status=s<=lo?"ahead":s<=hi?"on target":"behind";
+    const diff=Math.abs(Math.round(s-mid));
+    const nextPace=status==="ahead"?secsToStr(Math.max(s-3,lo-5)):status==="behind"?secsToStr(s-2):secsToStr(lo);
+    setPaceResult({status,diff,pace:secsToStr(s),nextPace,color:status==="ahead"?"#47FFB8":status==="on target"?"#E8FF47":"#FF6B47"});
+  };
+
+  const addTime=()=>{
+    if(!newTime)return;
+    const existing=fiveKTimes.find(t=>t.week===newWk);
+    let updated=existing?fiveKTimes.map(t=>t.week===newWk?{...t,time:newTime}:t):[...fiveKTimes,{week:newWk,time:newTime}].sort((a,b)=>a.week-b.week);
+    setFiveKTimes(updated);
+    try{localStorage.setItem("sc_5ktimes",JSON.stringify(updated))}catch{}
+    setNewTime("");
+    setPaceResult(null);
+  };
+
+  const sortedTimes=fiveKTimes.slice().sort((a,b)=>a.week-b.week);
+  const target=23*60;
+  const allSecs=sortedTimes.map(t=>paceToSecs(t.time)||target);
+  const maxS=Math.max(...allSecs,target+60);
+  const minS=Math.min(...allSecs,target-60);
+
+  return(
+    <div style={{padding:"16px 20px 0"}}>
+      <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:14}}>Stats</div>
+
+      {/* Pace Calculator */}
+      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+        <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#E8FF47",marginBottom:10}}>PACE CALCULATOR</div>
+        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginBottom:10}}>Enter your actual 400m rep pace to see if you're on target and what to aim for next session.</div>
+        <div style={{display:"flex",gap:8,marginBottom:10}}>
+          <input type="text" placeholder="e.g. 4:28" value={paceInput} onChange={e=>setPaceInput(e.target.value)} style={{flex:1}}/>
+          <button onClick={calcPace} style={{padding:"8px 14px",background:"#E8FF4720",border:"1px solid #E8FF4740",borderRadius:6,color:"#E8FF47",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>CHECK</button>
+        </div>
+        {paceResult&&!paceResult.error&&(
+          <div style={{background:`${paceResult.color}12`,border:`1px solid ${paceResult.color}30`,borderRadius:8,padding:"12px 14px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:paceResult.color}}>{paceResult.pace}/km</span>
+              <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:paceResult.color,background:`${paceResult.color}20`,padding:"3px 8px",borderRadius:4,letterSpacing:1}}>{paceResult.status.toUpperCase()}</span>
+            </div>
+            <div style={{fontSize:11,color:"#777",fontFamily:"'DM Mono',monospace",lineHeight:1.6}}>
+              {paceResult.status==="on target"?"Right on target — hold this intensity next session.":paceResult.status==="ahead"?`${paceResult.diff}s/km ahead — you can push harder. Next session aim for ${paceResult.nextPace}/km.`:`${paceResult.diff}s/km behind — focus on relaxed form. Try ${paceResult.nextPace}/km next session.`}
+            </div>
+          </div>
+        )}
+        {paceResult?.error&&<div style={{fontSize:11,color:"#FF4747",fontFamily:"'DM Mono',monospace"}}>{paceResult.error}</div>}
       </div>
-      {/* Cooldown + Mobility expanders */}
-      {s.cooldown&&<CooldownPanel type={s.cooldown} color={cfg.color}/>}
-      {s.mobility&&<MobilityPanel type={s.mobility} title={s.type==="gym"?"POST-GYM MOBILITY":"POST-RUN MOBILITY"} color={cfg.color}/>}
-      {/* Log session button */}
-      <div style={{display:"flex",gap:8,marginTop:10,alignItems:"center"}}>
-        <button onClick={onLog} style={{flex:1,padding:"8px 0",background:logData?"#47FFB815":"#1a1a1a",border:`1px solid ${logData?"#47FFB840":"#2a2a2a"}`,borderRadius:6,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,color:logData?"#47FFB8":"#666",letterSpacing:1}}>
-          {logData?"✓ LOGGED — TAP TO EDIT":"📝 LOG THIS SESSION"}
-        </button>
-        {logData&&<div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace"}}>RPE {logData.rpe} · {["","😖","😤","😐","😊","🤩"][logData.feel]}</div>}
+
+      {/* 5K Progress */}
+      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+        <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#FF6B47",marginBottom:12}}>5K PROGRESS GRAPH</div>
+        <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+          <input type="text" placeholder="mm:ss e.g. 22:45" value={newTime} onChange={e=>setNewTime(e.target.value)} style={{flex:1,minWidth:100}}/>
+          <select value={newWk} onChange={e=>setNewWk(Number(e.target.value))} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:6,color:"#f0f0f0",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",outline:"none"}}>
+            {Array.from({length:12},(_,i)=><option key={i+1} value={i+1}>Week {i+1}</option>)}
+          </select>
+          <button onClick={addTime} style={{padding:"8px 12px",background:"#FF6B4720",border:"1px solid #FF6B4740",borderRadius:6,color:"#FF6B47",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>ADD</button>
+        </div>
+        {sortedTimes.length===0?(
+          <div style={{textAlign:"center",padding:"20px 0",color:"#2a2a2a",fontFamily:"'DM Mono',monospace",fontSize:11}}>Log time trials to see your progress</div>
+        ):(
+          <div>
+            <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="none" style={{overflow:"visible"}}>
+              {/* Target line */}
+              {(()=>{const ty=110-((target-minS)/(maxS-minS+1))*90;return<line x1="0" y1={Math.max(10,ty)} x2="300" y2={Math.max(10,ty)} stroke="#FF6B47" strokeWidth="1" strokeDasharray="5,4" opacity="0.5"/>;})}
+              {/* Bars */}
+              {sortedTimes.map((t,i)=>{
+                const s=paceToSecs(t.time)||target;
+                const barH=Math.max(8,((maxS-s)/(maxS-minS+1))*90);
+                const x=sortedTimes.length===1?150:(i/(sortedTimes.length-1))*260+20;
+                const col=s<=target?"#47FFB8":"#FF6B47";
+                return<g key={i}>
+                  <rect x={x-10} y={110-barH} width={20} height={barH} fill={col} opacity={0.65} rx="2"/>
+                  <text x={x} y={125} textAnchor="middle" fill="#555" fontSize="8" fontFamily="DM Mono,monospace">W{t.week}</text>
+                  <text x={x} y={110-barH-5} textAnchor="middle" fill={col} fontSize="8" fontFamily="DM Mono,monospace">{t.time}</text>
+                </g>;
+              })}
+            </svg>
+            <div style={{display:"flex",justifyContent:"flex-end",marginTop:4}}>
+              <span style={{fontSize:9,color:"#FF6B47",fontFamily:"'DM Mono',monospace"}}>— 23:00 target</span>
+            </div>
+          </div>
+        )}
       </div>
-      {logData?.pace&&<div style={{fontSize:10,color:"#777",fontFamily:"'DM Mono',monospace",marginTop:4}}>Pace: {logData.pace}</div>}
-      {logData?.notes&&<div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",marginTop:2,lineHeight:1.5}}>"{logData.notes}"</div>}
+
+      {/* Personal Records */}
+      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+        <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#FFB347",marginBottom:12}}>🏆 PERSONAL RECORDS</div>
+        <div style={{padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>FASTEST PACE LOGGED</div>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:"#FFB347",marginTop:2}}>{prs.fastest?secsToStr(prs.fastest)+"/km":"—"}</div></div>
+            <span style={{fontSize:22}}>⚡</span>
+          </div>
+        </div>
+        {Object.entries(prs.heaviest).slice(0,5).map(([ex,kg])=>(
+          <div key={ex} style={{padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div><div style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>{ex.toUpperCase()}</div>
+              <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:"#FF6B47",marginTop:2}}>{kg}kg</div></div>
+              <span style={{fontSize:20}}>💪</span>
+            </div>
+          </div>
+        ))}
+        {!prs.fastest&&Object.keys(prs.heaviest).length===0&&<div style={{fontSize:11,color:"#2a2a2a",fontFamily:"'DM Mono',monospace",textAlign:"center",padding:"8px 0"}}>Log sessions to start building your records</div>}
+      </div>
     </div>
   );
 }
@@ -701,17 +956,38 @@ function App(){
   const[missed,setMissed]=useState(()=>{try{const s=localStorage.getItem("sc_missed");return s?JSON.parse(s):{}}catch{return{}}});
   const[sessionLogs,setSessionLogs]=useState(()=>{try{const s=localStorage.getItem("sc_logs");return s?JSON.parse(s):{}}catch{return{}}});
   const[readiness,setReadiness]=useState(()=>{try{const s=localStorage.getItem("sc_readiness");return s?JSON.parse(s):{}}catch{return{}}});
+  const[startDate,setStartDate]=useState(()=>{try{return localStorage.getItem("sc_startdate")||null}catch{return null}});
+  const[theme,setTheme]=useState(()=>{try{return localStorage.getItem("sc_theme")||"dark"}catch{return"dark"}});
+  const[weekNotes,setWeekNotes]=useState(()=>{try{const s=localStorage.getItem("sc_weeknotes");return s?JSON.parse(s):{}}catch{return{}}});
+  const[injuryFlags,setInjuryFlags]=useState(()=>{try{const s=localStorage.getItem("sc_injuries");return s?JSON.parse(s):{}}catch{return{}}});
+  const[fiveKTimes,setFiveKTimes]=useState(()=>{try{const s=localStorage.getItem("sc_5ktimes");return s?JSON.parse(s):[]}catch{return[]}});
+  const[showInjury,setShowInjury]=useState(false);
   const[toast,setToast]=useState(null);
   const[showReadiness,setShowReadiness]=useState(false);
   const[logModal,setLogModal]=useState(null);
   const toastRef=useRef(null);
+  const touchStartX=useRef(null);
+  const th=THEMES[theme]||THEMES.dark;
 
   useEffect(()=>{try{localStorage.setItem("sc_progress",JSON.stringify(checked))}catch{}},[checked]);
   useEffect(()=>{try{localStorage.setItem("sc_missed",JSON.stringify(missed))}catch{}},[missed]);
   useEffect(()=>{try{localStorage.setItem("sc_logs",JSON.stringify(sessionLogs))}catch{}},[sessionLogs]);
   useEffect(()=>{try{localStorage.setItem("sc_readiness",JSON.stringify(readiness))}catch{}},[readiness]);
+  useEffect(()=>{try{localStorage.setItem("sc_weeknotes",JSON.stringify(weekNotes))}catch{}},[weekNotes]);
+  useEffect(()=>{try{localStorage.setItem("sc_injuries",JSON.stringify(injuryFlags))}catch{}},[injuryFlags]);
+  useEffect(()=>{try{localStorage.setItem("sc_theme",theme)}catch{}},[theme]);
 
-  const showToast=msg=>{setToast(msg);clearTimeout(toastRef.current);toastRef.current=setTimeout(()=>setToast(null),2200)};
+  const showToast=msg=>{setToast(msg);clearTimeout(toastRef.current);toastRef.current=setTimeout(()=>setToast(null),2400)};
+  const handleTouchStart=e=>{if(view==="training")touchStartX.current=e.touches[0].clientX;};
+  const handleTouchEnd=e=>{
+    if(touchStartX.current===null||view!=="training")return;
+    const diff=touchStartX.current-e.changedTouches[0].clientX;
+    if(Math.abs(diff)>60){
+      if(diff>0)setDayIdx(i=>Math.min(i+1,weekData[week].length-1));
+      else setDayIdx(i=>Math.max(i-1,0));
+    }
+    touchStartX.current=null;
+  };
   const toggleSession=key=>{
     setChecked(p=>({...p,[key]:!p[key]}));
     // if marking done, clear any missed flag
@@ -733,10 +1009,24 @@ function App(){
       return()=>clearTimeout(t);
     }else{
       const nwk=week+1;
-      if(nwk<12){const t=setTimeout(()=>{setWeek(nwk);setDayIdx(0);showToast(`Week ${week+1} complete! 🏆  →  Week ${week+2}`)},800);return()=>clearTimeout(t);}
+      if(nwk<12){const t=setTimeout(()=>{if(typeof confetti!=="undefined")confetti({particleCount:100,spread:70,origin:{y:0.4},colors:["#E8FF47","#47FFB8","#47C8FF","#FF6B47"]});setWeek(nwk);setDayIdx(0);showToast(`Week ${week+1} complete! 🏆`)},800);return()=>clearTimeout(t);}
       else showToast("Plan complete! 🏁 Time to race.");
     }
   },[checked,missed]);
+
+  // Streak: consecutive days with all sessions actioned
+  const streak=React.useMemo(()=>{
+    let s=0;
+    outer:for(let w=week;w>=0;w--){
+      const days=weekData[w];
+      for(let di=days.length-1;di>=0;di--){
+        const keys=days[di].sessions.map((_,si)=>sKey(w,di,si));
+        if(keys.every(k=>checked[k]||missed[k]))s++;
+        else break outer;
+      }
+    }
+    return s;
+  },[checked,missed,week]);
 
   const wkKeys=w=>weekData[w].flatMap((d,di)=>d.sessions.map((_,si)=>sKey(w,di,si)));
   const wkDone=w=>wkKeys(w).filter(k=>checked[k]).length;
@@ -747,6 +1037,7 @@ function App(){
   const pct=Math.round((done/TOTAL_SESSIONS)*100);
   const missedPct=Math.round((missedCount/TOTAL_SESSIONS)*100);
 
+  const dayDate=startDate?addDays(new Date(startDate),week*7+dayIdx):null;
   const wkData=weekData[week];
   const dayData=wkData[dayIdx];
   const wkNum=week+1;
@@ -756,13 +1047,55 @@ function App(){
   const todayKey=`r-${week}-${dayIdx}`;
   const todayReadiness=readiness[todayKey];
 
-  const tabs=[["training","SESSIONS"],["nutrition","NUTRITION"],["paces","PACES"],["overview","OVERVIEW"],["race","RACE DAY"],["next","NEXT STEPS"]];
+  const exportWeek=()=>{
+    let txt=`SUPPER CLUB — Week ${wkNum}\n${"=".repeat(28)}\n\n`;
+    if(startDate)txt+=`Week of ${addDays(new Date(startDate),week*7).toLocaleDateString("en-GB",{day:"numeric",month:"long"})}\n\n`;
+    wkData.forEach((day,di)=>{
+      txt+=`${day.label.toUpperCase()}\n`;
+      day.sessions.forEach((s,si)=>{
+        const k=sKey(week,di,si);
+        const status=checked[k]?"✓ DONE":missed[k]?"✗ MISSED":"○ PENDING";
+        const log=sessionLogs[`log-${week}-${di}-${si}`];
+        txt+=`  ${status} ${s.title}${log?.pace?" ["+log.pace+"]":""}\n`;
+      });
+      txt+="\n";
+    });
+    if(weekNotes[week])txt+=`Notes:\n${weekNotes[week]}\n`;
+    const blob=new Blob([txt],{type:"text/plain"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=`supperclub-week${wkNum}.txt`;a.click();URL.revokeObjectURL(url);
+    showToast("Week exported ✓");
+  };
+
+  const tabs=[["training","SESSIONS"],["nutrition","NUTRITION"],["paces","PACES"],["stats","STATS"],["overview","OVERVIEW"],["race","RACE DAY"],["next","NEXT STEPS"]];
+
+  if(!startDate){
+    return <CalendarSetupModal onSave={d=>{setStartDate(d);try{localStorage.setItem("sc_startdate",d)}catch{}}}/>;
+  }
 
   return(
-    <div style={{minHeight:"100vh",background:"#0a0a0a",color:"#f0f0f0",fontFamily:"'Barlow',sans-serif",paddingBottom:60,paddingTop:60}}>
+    <div style={{minHeight:"100vh",background:theme==="amber"?"#080500":"#0a0a0a",color:theme==="amber"?"#f5e6c0":"#f0f0f0",fontFamily:"'Barlow',sans-serif",paddingBottom:60}}
+      onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {toast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#1a2a1a",border:"1px solid #47FFB860",borderRadius:10,padding:"10px 18px",fontSize:12,fontFamily:"'DM Mono',monospace",color:"#47FFB8",boxShadow:"0 4px 24px rgba(0,0,0,0.7)",whiteSpace:"nowrap",animation:"fadeIn 0.2s ease"}}>{toast}</div>}
       {showReadiness&&<ReadinessModal dateKey={todayKey} existing={todayReadiness} onSave={d=>{setReadiness(p=>({...p,[todayKey]:d}));setShowReadiness(false);showToast("Readiness saved ✓")}} onClose={()=>setShowReadiness(false)}/>}
       {logModal&&<SessionLogModal session={logModal.session} logKey={logModal.key} existing={sessionLogs[logModal.key]} onSave={d=>{setSessionLogs(p=>({...p,[logModal.key]:d}));setLogModal(null);showToast("Session logged ✓")}} onClose={()=>setLogModal(null)}/>}
+
+      {/* INJURY MODAL */}
+      {showInjury&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
+          <div style={{width:"100%",background:"#111",borderRadius:"16px 16px 0 0",padding:24,animation:"slideIn 0.2s ease"}}>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,color:"#FFB347",marginBottom:4}}>Injury Flags</div>
+            <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>SESSIONS WILL SHOW A WARNING FOR FLAGGED AREAS</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
+              {INJURY_ZONES.map(z=>{
+                const active=injuryFlags[z];
+                return(<button key={z} onClick={()=>setInjuryFlags(p=>({...p,[z]:!p[z]}))} style={{padding:"8px 12px",borderRadius:8,border:`1px solid ${active?"#FFB347":"#2a2a2a"}`,background:active?"#FFB34720":"#1a1a1a",color:active?"#FFB347":"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>{active?"⚠️ ":""}{z}</button>);
+              })}
+            </div>
+            <button onClick={()=>setShowInjury(false)} style={{width:"100%",padding:"12px 0",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:8,color:"#888",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>DONE</button>
+          </div>
+        </div>
+      )}
 
       {/* HEADER */}
       <div style={{background:"#0a0a0a",padding:"44px 20px 14px",borderBottom:"1px solid #1e1e1e"}}>
@@ -774,11 +1107,31 @@ function App(){
               <span style={{color:phase?.color??"#E8FF47"}}>{isPeak?"TEST YOURSELF.":isDeload?"RECOVER HARDER.":(phase?.label.split("—")[1].trim()??"BUILD")+"."}</span>
             </h1>
           </div>
-          {/* Readiness button */}
-          <button onClick={()=>setShowReadiness(true)} style={{background:todayReadiness?`${todayReadiness.avg>=4?"#47FFB8":todayReadiness.avg>=3?"#E8FF47":todayReadiness.avg>=2?"#FFB347":"#FF4747"}15`:"#141414",border:`1px solid ${todayReadiness?todayReadiness.avg>=4?"#47FFB840":todayReadiness.avg>=3?"#E8FF4740":todayReadiness.avg>=2?"#FFB34740":"#FF474740":"#222"}`,borderRadius:10,padding:"8px 10px",cursor:"pointer",textAlign:"left",minWidth:60}}>
-            <div style={{fontSize:16,textAlign:"center"}}>{todayReadiness?["😖","😤","😐","😊","🤩"][Math.round(todayReadiness.avg)-1]:"💤"}</div>
-            <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#444",textAlign:"center",marginTop:2,letterSpacing:1}}>{todayReadiness?`${todayReadiness.avg}/5`:"CHECK IN"}</div>
-          </button>
+          <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
+            {/* Readiness */}
+            <button onClick={()=>setShowReadiness(true)} style={{background:todayReadiness?`${todayReadiness.avg>=4?"#47FFB8":todayReadiness.avg>=3?"#E8FF47":todayReadiness.avg>=2?"#FFB347":"#FF4747"}15`:"#141414",border:`1px solid ${todayReadiness?todayReadiness.avg>=4?"#47FFB840":todayReadiness.avg>=3?"#E8FF4740":todayReadiness.avg>=2?"#FFB34740":"#FF474740":"#222"}`,borderRadius:10,padding:"7px 10px",cursor:"pointer",textAlign:"center",minWidth:54}}>
+              <div style={{fontSize:16}}>{todayReadiness?["😖","😤","😐","😊","🤩"][Math.round(todayReadiness.avg)-1]:"💤"}</div>
+              <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:2,letterSpacing:1}}>{todayReadiness?`${todayReadiness.avg}/5`:"READY?"}</div>
+            </button>
+            {/* Theme toggle */}
+            <button onClick={()=>setTheme(t=>t==="dark"?"amber":"dark")} style={{background:"#141414",border:"1px solid #222",borderRadius:8,padding:"5px 8px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,color:theme==="amber"?"#ffb000":"#666",letterSpacing:1}}>
+              {theme==="amber"?"🌙 DARK":"🟡 AMBER"}
+            </button>
+          </div>
+        </div>
+
+        {/* Streak + date chips */}
+        <div style={{display:"flex",gap:8,marginTop:10,marginBottom:4,flexWrap:"wrap"}}>
+          {streak>0&&<div style={{background:"#E8FF4712",border:"1px solid #E8FF4730",borderRadius:6,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontSize:12}}>🔥</span>
+            <span style={{fontFamily:"'Pirata One',cursive",fontSize:14,color:"#E8FF47"}}>{streak} day streak</span>
+          </div>}
+          {Object.values(injuryFlags).some(Boolean)&&<button onClick={()=>setShowInjury(true)} style={{background:"#FFB34715",border:"1px solid #FFB34730",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,color:"#FFB347"}}>
+            ⚠️ {Object.values(injuryFlags).filter(Boolean).length} niggle{Object.values(injuryFlags).filter(Boolean).length>1?"s":""}
+          </button>}
+          {dayDate&&<div style={{background:"#141414",border:"1px solid #1e1e1e",borderRadius:6,padding:"4px 10px"}}>
+            <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"#555"}}>{fmtDate(dayDate)}</span>
+          </div>}
         </div>
 
         {/* Weekly intention */}
@@ -833,7 +1186,13 @@ function App(){
 
       {/* WEEK SELECTOR */}
       <div style={{padding:"10px 20px 12px",borderBottom:"1px solid #1e1e1e"}}>
-        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#444",marginBottom:7}}>SELECT WEEK</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
+          <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#444"}}>SELECT WEEK</div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setShowInjury(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:Object.values(injuryFlags).some(Boolean)?"#FFB347":"#555",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>⚠️ INJURY</button>
+            <button onClick={exportWeek} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>↗ EXPORT</button>
+          </div>
+        </div>
         <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
           {Array.from({length:12},(_,i)=>{
             const w=i+1,isA=w===wkNum,dl=w===4||w===8,pk=w===12;
@@ -869,28 +1228,41 @@ function App(){
               const allD=dd===d.sessions.length;
               const anyMissed=dm>0&&!allD;
               const allActioned=(dd+dm)===d.sessions.length&&!allD;
+              const pillDate=startDate?addDays(new Date(startDate),week*7+di):null;
               return(<button key={d.day} onClick={()=>setDayIdx(di)} style={{flex:"0 0 auto",padding:"8px 11px",borderRadius:7,position:"relative",border:isA?`1px solid ${main.color}`:allD?"1px solid #47FFB850":anyMissed?"1px solid #FF474750":"1px solid #222",background:isA?`${main.color}18`:allD?"#47FFB812":anyMissed?"#FF474710":"#111",cursor:"pointer",transition:"all 0.15s"}}>
                 <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isA?main.color:allD?"#47FFB8":anyMissed?"#FF8888":"#666"}}>{d.day}</div>
-                <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",marginTop:1,color:isA?"#ccc":allD?"#47FFB870":anyMissed?"#FF474780":"#333"}}>{allD?"✓ DONE":anyMissed?`${dm} MISSED`:d.sessions.map(s=>T[s.type].label).join("+")}</div>
+                <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",marginTop:1,color:isA?"#ccc":allD?"#47FFB870":anyMissed?"#FF474780":"#333"}}>
+                  {allD?"✓ DONE":anyMissed?`${dm} MISSED`:pillDate?fmtDate(pillDate):d.sessions.map(s=>T[s.type].label).join("+")}
+                </div>
                 {d.sessions.length>1&&!allD&&!anyMissed&&<div style={{position:"absolute",top:3,right:3,width:4,height:4,borderRadius:"50%",background:"#E8FF47"}}/>}
               </button>);
             })}
           </div>
-          <div style={{padding:"14px 20px 0"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
+          <div style={{padding:"14px 20px 0"}} className="card-enter" key={`day-${week}-${dayIdx}`}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
               <div>
                 <div style={{fontFamily:"'Pirata One',cursive",fontSize:26,letterSpacing:2}}>{dayData.label}</div>
                 <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",letterSpacing:2}}>{dayData.theme.toUpperCase()}</div>
+                {dayDate&&<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333",marginTop:2}}>{fmtDate(dayDate)}</div>}
               </div>
-              {dayData.sessions.length>1&&<span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#E8FF47",border:"1px solid #E8FF4740",padding:"3px 7px",borderRadius:3}}>DOUBLE DAY</span>}
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                {dayData.sessions.length>1&&dayData.sessions.some(s=>s.type!=="rest")&&<span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#E8FF47",border:"1px solid #E8FF4740",padding:"3px 7px",borderRadius:3}}>DOUBLE DAY</span>}
+                <span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#2a2a2a",letterSpacing:1}}>← swipe →</span>
+              </div>
             </div>
             {dayData.sessions.some(s=>s.type==="run")&&(
               <MobilityPanel type="preRun" title="PRE-RUN" color="#E8FF47"/>
             )}
             {dayData.sessions.map((s,si)=>(
-              <SessionCard key={si} s={s} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed}
+              <SessionCard key={si} s={s} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed} injuryFlags={injuryFlags}
                 onLog={()=>setLogModal({session:s,key:`log-${week}-${dayIdx}-${si}`})} logData={sessionLogs[`log-${week}-${dayIdx}-${si}`]}/>
             ))}
+
+            {/* Week notes */}
+            <div style={{background:"#141414",borderRadius:8,padding:"12px 14px",marginBottom:20,border:"1px solid #1e1e1e"}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#444",marginBottom:6}}>WEEK {wkNum} NOTES</div>
+              <textarea rows={2} placeholder="How's the week going? Any observations..." value={weekNotes[week]||""} onChange={e=>setWeekNotes(p=>({...p,[week]:e.target.value}))} style={{resize:"none",background:"transparent",border:"none",padding:0,color:"#888",fontSize:12,width:"100%",outline:"none",fontFamily:"'DM Mono',monospace"}}/>
+            </div>
           </div>
         </>
       )}
@@ -1107,21 +1479,24 @@ function App(){
               <div style={{fontSize:10,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginBottom:8}}>{ph.desc}</div>
               {ph.weeks.map(w=>{
                 const dl=w===4||w===8,pk=w===12,d2=wkDone(w-1),m2=wkMissed(w-1),t=wkTotal(w-1),allD=d2===t&&t>0,hasMissed=m2>0;
+                const wkStartDate=startDate?addDays(new Date(startDate),(w-1)*7):null;
+                const note=weekNotes[w-1];
                 return(<button key={w} onClick={()=>{setWeek(w-1);setDayIdx(0);setView("training");}} style={{display:"block",width:"100%",marginBottom:5,background:dl?"#47C8FF0a":pk?"#FF6B470a":"#111",border:`1px solid ${allD?"#47FFB840":hasMissed?"#FF474730":dl?"#47C8FF25":pk?"#FF6B4725":"#1e1e1e"}`,borderLeft:`3px solid ${allD?"#47FFB8":hasMissed?"#FF4747":dl?"#47C8FF":pk?"#FF6B47":ph.color}`,borderRadius:8,padding:"10px 14px",cursor:"pointer",textAlign:"left"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{fontFamily:"'Pirata One',cursive",fontSize:17,color:allD?"#47FFB8":hasMissed?"#FF8888":"#e0e0e0",letterSpacing:1}}>Week {w} {dl?"— DELOAD":pk?"— PEAK & TEST":""} {allD?"✓":""}</div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:allD?"#47FFB8":hasMissed?"#FF8888":"#555"}}>{d2}/{t}{m2>0?` · ${m2}✕`:""}</div>
-                      <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#333"}}>TAP →</div>
+                    <div>
+                      <div style={{fontFamily:"'Pirata One',cursive",fontSize:17,color:allD?"#47FFB8":hasMissed?"#FF8888":"#e0e0e0",letterSpacing:1}}>Week {w} {dl?"— DELOAD":pk?"— PEAK & TEST":""} {allD?"✓":""}</div>
+                      {wkStartDate&&<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333",marginTop:1}}>{fmtDate(wkStartDate)}</div>}
                     </div>
+                    <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:allD?"#47FFB8":hasMissed?"#FF8888":"#555"}}>{d2}/{t}{m2>0?` · ${m2}✕`:""}</div>
                   </div>
                   <div style={{height:3,background:"#1e1e1e",borderRadius:2,marginTop:6,overflow:"hidden",position:"relative"}}>
                     <div style={{position:"absolute",top:0,bottom:0,left:0,width:`${t>0?(d2/t)*100:0}%`,background:allD?"#47FFB8":ph.color,borderRadius:2,transition:"width 0.3s"}}/>
                     <div style={{position:"absolute",top:0,bottom:0,left:`${t>0?(d2/t)*100:0}%`,width:`${t>0?(m2/t)*100:0}%`,background:"#FF4747",opacity:0.7,transition:"width 0.3s"}}/>
                   </div>
-                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:5,lineHeight:1.5}}>
-                    {dl?"Volume -30% · Easy paces · Full recovery":pk?"Taper · Tune-up Fri · Shakeout Sat · 5K all-out Sun sub-23:00":w<=3?"400m @ 4:25–4:30 · Tempo 5:05–5:15 · Long 75 min":w<=7?"400m @ 4:22–4:27 · Tempo 5:05–5:10 · Long 90 min":"400m @ 4:18–4:23 · Tempo 5:00–5:05 · Long 100 min"}
-                  </div>
+                  {note?<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:5,lineHeight:1.4,fontStyle:"italic"}}>"{note.slice(0,70)}{note.length>70?"...":""}"</div>
+                  :<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333",marginTop:5}}>
+                    {dl?"Volume -30% · Easy paces · Full recovery":pk?"Taper · Tune-up Fri · Shakeout Sat · 5K Sun":w<=3?"400m @ 4:25-4:30 · Tempo 5:05-5:15 · Long 75 min":w<=7?"400m @ 4:22-4:27 · Tempo 5:05-5:10 · Long 90 min":"400m @ 4:18-4:23 · Tempo 5:00-5:05 · Long 100 min"}
+                  </div>}
                 </button>);
               })}
             </div>
@@ -1129,6 +1504,7 @@ function App(){
         </div>
       )}
 
+      {view==="stats"&&<StatsTab sessionLogs={sessionLogs} fiveKTimes={fiveKTimes} setFiveKTimes={setFiveKTimes}/>}
       {view==="race"&&<RaceDayTab/>}
       {view==="next"&&<PostPlanTab/>}
     </div>
