@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>  
 <meta name="apple-mobile-web-app-title" content="Supper Club"/>
-<meta name="theme-color" content="#0a0a0a"/>
+<meta name="theme-color" content="var(--bg)"/>
 <link rel="icon" href="icon.png"/>
 <link rel="apple-touch-icon" href="icon.png"/>
 <title>Supper Club</title>
@@ -32,6 +32,9 @@ input[type=text]:focus,textarea:focus{border-color:#444}
 @keyframes tickBounce{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
 @keyframes cardSlide{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
 .card-enter{animation:cardSlide 0.2s ease}
+:root{--bg:#0a0a0a;--bg2:#111;--card:#141414;--border:#1e1e1e;--text:#f0f0f0;--muted:#888;--dim:#555;--vdim:#333}
+.theme-crimson{--bg:#0a0000;--bg2:#150000;--card:#200000;--border:#3d0a0a;--text:#ffe8e8;--muted:#ff9999;--dim:#cc4444;--vdim:#661111}
+body{background:var(--bg);color:var(--text)}
 input[type=date]{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;width:100%;outline:none}
 input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:0.4}
 </style>
@@ -57,7 +60,7 @@ const T={
   cycle:{color:"#47C8FF",icon:"🔄",label:"BIKE"},
   swim: {color:"#47FFB8",icon:"🌊",label:"SWIM"},
   gym:  {color:"#FF6B47",icon:"💪",label:"GYM"},
-  rest: {color:"#888",   icon:"🌿",label:"REST"},
+  rest: {color:"var(--muted)",   icon:"🌿",label:"REST"},
 };
 const phases=[
   {label:"PHASE 1 — BUILD",  weeks:[1,2,3,4],  color:"#E8FF47",desc:"Establish aerobic base, movement patterns, and interval tolerance. Week 4 deloads."},
@@ -67,16 +70,17 @@ const phases=[
 
 // ── WEEKLY INTENTIONS ──────────────────────────────────────────────
 
-// ── NEW CONSTANTS ──────────────────────────────────────────────────
+// ── THEME ──────────────────────────────────────────────────────────
+// dark = default black, crimson = deep red alternative
+const THEMES={
+  dark:{bg:"var(--bg)",bg2:"var(--bg2)",card:"var(--card)",border:"var(--border)",text:"var(--text)",muted:"var(--muted)",dim:"var(--dim)",vdim:"var(--vdim)",accent:"#E8FF47",name:"dark"},
+  crimson:{bg:"#0a0000",bg2:"#150000",card:"#200000",border:"#3d0a0a",text:"#ffe8e8",muted:"#ff9999",dim:"#cc4444",vdim:"#661111",accent:"#ff2222",name:"crimson"},
+};
+
+// ── INJURY / WEATHER ───────────────────────────────────────────────
 const INJURY_ZONES=["Left hamstring","Right hamstring","Left calf","Right calf","Left knee","Right knee","Lower back","Hip flexor","Achilles","Shoulder"];
 const INJURY_SESSION_MAP={"Left hamstring":["run","gym"],"Right hamstring":["run","gym"],"Left calf":["run"],"Right calf":["run"],"Left knee":["run","gym"],"Right knee":["run","gym"],"Lower back":["gym","run"],"Hip flexor":["run","gym"],"Achilles":["run"],"Shoulder":["gym","swim"]};
 const WEATHER_OPTIONS=["☀️ Sunny","🌤 Mild","🌧 Rainy","🌬 Windy","🥵 Hot","🥶 Cold","🌫 Humid"];
-
-// ── THEME CONFIGS ──────────────────────────────────────────────────
-const THEMES={
-  dark:{bg:"#0a0a0a",bg2:"#111",card:"#141414",border:"#1e1e1e",text:"#f0f0f0",muted:"#888",dim:"#555",vdim:"#333",accent:"#E8FF47",name:"dark"},
-  amber:{bg:"#080500",bg2:"#100900",card:"#160e00",border:"#2a1f00",text:"#f5e6c0",muted:"#a08060",dim:"#7a6040",vdim:"#4a3820",accent:"#ffb000",name:"amber"},
-};
 
 // ── UTILITIES ──────────────────────────────────────────────────────
 function paceToSecs(str){if(!str)return null;const m=str.match(/(\d+):(\d+)/);return m?parseInt(m[1])*60+parseInt(m[2]):null;}
@@ -208,13 +212,13 @@ const nutrition={
     {time:"12:00",label:"Lunch",color:"#47FFB8",food:"Chicken rice bowl + broccoli + olive oil (40g+ protein)"},
     {time:"18:00",label:"Pre-Session 2",color:"#E8FF47",food:"2 rice cakes + 1 tbsp almond butter + banana"},
     {time:"20:15",label:"Post-Session 2",color:"#47C8FF",food:"Salmon + sweet potato + peas — full recovery meal"},
-    {time:"21:30",label:"Evening",color:"#888",food:"Coconut yoghurt + frozen berries + mixed nuts"},
+    {time:"21:30",label:"Evening",color:"var(--muted)",food:"Coconut yoghurt + frozen berries + mixed nuts"},
   ],
   singleAM:[
     {time:"06:00",label:"Pre-Session",color:"#E8FF47",food:"Banana + 1 tbsp almond butter — light & fast"},
     {time:"08:00",label:"Post-Session",color:"#47C8FF",food:"3 eggs any style + 1 slice sourdough + ½ avocado"},
     {time:"12:30",label:"Lunch",color:"#47FFB8",food:"Tuna/chickpea bowl + brown rice + spinach"},
-    {time:"16:00",label:"Snack",color:"#888",food:"30g mixed nuts + 2 squares dark chocolate"},
+    {time:"16:00",label:"Snack",color:"var(--muted)",food:"30g mixed nuts + 2 squares dark chocolate"},
     {time:"19:00",label:"Dinner",color:"#FF6B47",food:"Chicken thigh + sweet potato + greens"},
   ],
   longRun:[
@@ -222,19 +226,46 @@ const nutrition={
     {time:"09:00",label:"Mid-Run",color:"#E8FF47",food:"Date or banana at 45 min mark if run >75 min"},
     {time:"09:30",label:"Post-Run",color:"#47C8FF",food:"4 eggs + 2 slices sourdough + avocado + OJ — earned it"},
     {time:"13:00",label:"Lunch",color:"#47FFB8",food:"Lentil soup + sourdough or big chicken salad"},
-    {time:"16:00",label:"Snack",color:"#888",food:"Banana + almond butter — keep glycogen up"},
+    {time:"16:00",label:"Snack",color:"var(--muted)",food:"Banana + almond butter — keep glycogen up"},
     {time:"19:00",label:"Dinner",color:"#FF6B47",food:"Coconut chicken curry + brown rice — carb refuel"},
   ],
   restDay:[
     {time:"09:00",label:"Brunch",color:"#47FFB8",food:"3 eggs + ½ avocado + sourdough + cherry tomatoes"},
     {time:"13:00",label:"Lunch",color:"#47FFB8",food:"Tuna salad — light protein, lower carbs today"},
-    {time:"16:00",label:"Snack",color:"#888",food:"Rice cakes + almond butter or handful of nuts"},
+    {time:"16:00",label:"Snack",color:"var(--muted)",food:"Rice cakes + almond butter or handful of nuts"},
     {time:"19:30",label:"Dinner",color:"#FF6B47",food:"Chickpea & sweet potato curry + small portion rice"},
-    {time:"21:00",label:"Optional",color:"#888",food:"Dark chocolate (2–3 squares) — rest day treat"},
+    {time:"21:00",label:"Optional",color:"var(--muted)",food:"Dark chocolate (2–3 squares) — rest day treat"},
   ],
 };
 
-// ── PLAN GENERATOR ─────────────────────────────────────────────────
+// ── DYNAMIC DETAIL GENERATOR ───────────────────────────────────────
+// Replaces hardcoded pace strings in session details with slider-computed values
+function applyPacesToDetails(details, paces){
+  if(!details||!paces)return details;
+  const replacements=[
+    [/4:25[-–]4:30\/km/g,  ()=>paces.reps400.pace],
+    [/4:22[-–]4:27\/km/g,  ()=>paces.reps400.pace],
+    [/4:18[-–]4:23\/km/g,  ()=>paces.reps400.pace],
+    [/4:25[-–]4:30/g,      ()=>paces.reps400.pace.replace("/km","")],
+    [/4:45\/km/g,          ()=>paces.tenK.pace],
+    [/4:42\/km/g,          ()=>paces.tenK.pace],
+    [/4:38\/km/g,          ()=>paces.tenK.pace],
+    [/4:33[-–]4:38\/km/g,  ()=>paces.fiveK.pace],
+    [/5:05[-–]5:15\/km/g,  ()=>paces.tempo.pace],
+    [/5:05[-–]5:10\/km/g,  ()=>paces.tempo.pace],
+    [/5:00[-–]5:05\/km/g,  ()=>paces.tempo.pace],
+    [/6:00[-–]6:20\/km/g,  ()=>paces.easy.pace],
+    [/6:00[-–]6:20/g,      ()=>paces.easy.pace.replace("/km","")],
+    [/5:25[-–]5:30\/km/g,  ()=>paces.marathon.pace],
+    [/4:53\/km/g,          ()=>paces.hmPace.pace],
+  ];
+  return details.map(d=>{
+    let s=d;
+    replacements.forEach(([re,fn])=>{s=s.replace(re,fn());});
+    return s;
+  });
+}
+
 // Double-day shape per week — 0 = single session only on that slot
 // monGym/wedGym/friGym = PM gym after AM run
 // tueB+tueSw = both 1 makes TUE a double | thuB+thuSw = both 1 makes THU a double
@@ -255,6 +286,32 @@ const WSHAPE={
 };
 
 const minsToKm=(mins)=>Math.round((mins/6)*10)/10;
+
+// ── DYNAMIC PACE COMPUTATION ───────────────────────────────────────
+// easyPaceMin is user's easy pace in seconds/km (default 6:00 = 360)
+// All paces derive from this single input
+function computePaces(easySecsPerKm){
+  const e=easySecsPerKm;
+  // Relative to easy pace — derived from typical vDot relationships
+  const tempo   = Math.round(e * 0.855);
+  const hmPace  = Math.round(e * 0.810);
+  const tenK    = Math.round(e * 0.790);
+  const fiveK   = Math.round(e * 0.760);
+  const rep400  = Math.round(e * 0.738);
+  const marathon= Math.round(e * 0.905);
+  const fmt=(s,r=5)=>{const lo=s,hi=s+r;return`${Math.floor(lo/60)}:${String(lo%60).padStart(2,"0")}–${Math.floor(hi/60)}:${String(hi%60).padStart(2,"0")}/km`;};
+  const f1=(s)=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}/km`;
+  return{
+    easy:     {label:"Easy / Z2",        pace:fmt(e,20), color:"#47FFB8"},
+    longRun:  {label:"Long Run",         pace:fmt(e,20), color:"#47FFB8"},
+    marathon: {label:"Marathon Pace",    pace:fmt(marathon,10), color:"#47C8FF"},
+    tempo:    {label:"Tempo / Threshold",pace:fmt(tempo,10), color:"#E8FF47"},
+    hmPace:   {label:"HM Race Pace",     pace:f1(hmPace), color:"#FFB347"},
+    tenK:     {label:"10K Pace",         pace:f1(tenK), color:"#FF8C47"},
+    fiveK:    {label:"5K Pace",          pace:fmt(fiveK,5), color:"#FF6B47"},
+    reps400:  {label:"400m Rep Pace",    pace:fmt(rep400,5), color:"#FF4747"},
+  };
+}
 
 function makeWeek(wk){
   const p=wk<=3?1:wk<=7?2:3;
@@ -416,13 +473,13 @@ function CalendarSetupModal({onSave}){
   const monthName=calMonth.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{width:"100%",maxWidth:360,background:"#111",borderRadius:16,padding:24,animation:"slideIn 0.3s ease"}}>
+      <div style={{width:"100%",maxWidth:360,background:"var(--bg2)",borderRadius:16,padding:24,animation:"slideIn 0.3s ease"}}>
         <div style={{fontFamily:"'Pirata One',cursive",fontSize:26,letterSpacing:2,marginBottom:4}}>Start Date</div>
-        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>SELECT THE MONDAY WEEK 1 BEGINS</div>
+        <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>SELECT THE MONDAY WEEK 1 BEGINS</div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()-1,1))} style={{background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:6,color:"#888",cursor:"pointer",padding:"6px 14px",fontFamily:"'DM Mono',monospace",fontSize:16}}>‹</button>
-          <span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"#f0f0f0",letterSpacing:1}}>{monthName}</span>
-          <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()+1,1))} style={{background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:6,color:"#888",cursor:"pointer",padding:"6px 14px",fontFamily:"'DM Mono',monospace",fontSize:16}}>›</button>
+          <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()-1,1))} style={{background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:6,color:"var(--muted)",cursor:"pointer",padding:"6px 14px",fontFamily:"'DM Mono',monospace",fontSize:16}}>‹</button>
+          <span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"var(--text)",letterSpacing:1}}>{monthName}</span>
+          <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()+1,1))} style={{background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:6,color:"var(--muted)",cursor:"pointer",padding:"6px 14px",fontFamily:"'DM Mono',monospace",fontSize:16}}>›</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
           {["M","T","W","T","F","S","S"].map((d,i)=>(
@@ -435,8 +492,8 @@ function CalendarSetupModal({onSave}){
             return(
               <button key={i} onClick={()=>mon&&d&&setSelDate(d)} disabled={!mon||!d} style={{
                 aspectRatio:"1",borderRadius:8,border:"none",
-                background:sel?"#E8FF47":mon&&d?"#1e1e1e":"transparent",
-                color:sel?"#080808":mon&&d?"#f0f0f0":d?"#2a2a2a":"transparent",
+                background:sel?"#E8FF47":mon&&d?"var(--border)":"transparent",
+                color:sel?"#080808":mon&&d?"var(--text)":d?"var(--border)":"transparent",
                 cursor:mon&&d?"pointer":"default",
                 fontFamily:"'DM Mono',monospace",fontSize:13,
                 outline:mon&&d&&!sel?"1px solid #2a2a2a":"none",
@@ -447,10 +504,10 @@ function CalendarSetupModal({onSave}){
         </div>
         {selDate&&<div style={{background:"#E8FF4715",border:"1px solid #E8FF4730",borderRadius:8,padding:"10px 14px",marginBottom:16}}>
           <div style={{fontSize:9,color:"#E8FF47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:3}}>WEEK 1 STARTS</div>
-          <div style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:"#f0f0f0",letterSpacing:1}}>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:"var(--text)",letterSpacing:1}}>
             Monday {selDate.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
           </div>
-          <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",marginTop:3}}>
+          <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginTop:3}}>
             Plan ends: {addDays(selDate,83).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
           </div>
         </div>}
@@ -473,9 +530,9 @@ function ReadinessModal({dateKey,existing,onSave,onClose}){
   const advice=avg>=4?"Green light. Attack today's session.":avg>=3?"Proceed as planned. Stay attentive to how you feel.":avg>=2?"Consider reducing intensity by 15–20%. Don't skip, just dial back.":"Rest day recommended. A skipped session today beats an injury or illness tomorrow.";
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
-      <div style={{width:"100%",background:"#111",borderRadius:"16px 16px 0 0",padding:24,animation:"slideIn 0.2s ease"}}>
+      <div style={{width:"100%",background:"var(--bg2)",borderRadius:"16px 16px 0 0",padding:24,animation:"slideIn 0.2s ease"}}>
         <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,letterSpacing:2,marginBottom:4}}>Daily Readiness</div>
-        <div style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>HOW ARE YOU FEELING TODAY?</div>
+        <div style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>HOW ARE YOU FEELING TODAY?</div>
         {[
           {label:"Sleep Quality",val:sleep,set:setSleep,lo:"Poor",hi:"Great",color:"#47C8FF"},
           {label:"Energy / Fatigue",val:fatigue,set:setFatigue,lo:"Drained",hi:"Energised",color:"#E8FF47"},
@@ -495,10 +552,10 @@ function ReadinessModal({dateKey,existing,onSave,onClose}){
             <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color}}>READINESS SCORE</span>
             <span style={{fontFamily:"'Pirata One',cursive",fontSize:24,color}}>{avg}/5</span>
           </div>
-          <div style={{fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.6}}>{advice}</div>
+          <div style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",lineHeight:1.6}}>{advice}</div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>Cancel</button>
+          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>Cancel</button>
           <button onClick={()=>onSave({sleep,fatigue,soreness,mood,avg:parseFloat(avg)})} style={{flex:2,padding:"12px 0",background:`${color}20`,border:`1px solid ${color}50`,borderRadius:8,color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>SAVE READINESS</button>
         </div>
       </div>
@@ -519,27 +576,27 @@ function SessionLogModal({session,logKey,existing,onSave,onClose}){
   const exercises=session.gymExercises||[];
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
-      <div style={{width:"100%",background:"#111",borderRadius:"16px 16px 0 0",padding:24,maxHeight:"85vh",overflowY:"auto",animation:"slideIn 0.2s ease"}}>
+      <div style={{width:"100%",background:"var(--bg2)",borderRadius:"16px 16px 0 0",padding:24,maxHeight:"85vh",overflowY:"auto",animation:"slideIn 0.2s ease"}}>
         <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,color:cfg.color,marginBottom:4}}>Log Session</div>
-        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>{session.title.toUpperCase()}</div>
+        <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:20}}>{session.title.toUpperCase()}</div>
         {/* Weather */}
         <div style={{marginBottom:16}}>
-          <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>CONDITIONS</div>
+          <div style={{fontSize:10,color:"var(--muted)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>CONDITIONS</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {WEATHER_OPTIONS.map(w=>(
-              <button key={w} onClick={()=>setWeather(weather===w?"":w)} style={{padding:"5px 9px",borderRadius:6,border:`1px solid ${weather===w?cfg.color:"#2a2a2a"}`,background:weather===w?`${cfg.color}20`:"#1a1a1a",color:weather===w?cfg.color:"#555",cursor:"pointer",fontSize:12,fontFamily:"'DM Mono',monospace"}}>{w}</button>
+              <button key={w} onClick={()=>setWeather(weather===w?"":w)} style={{padding:"5px 9px",borderRadius:6,border:`1px solid ${weather===w?cfg.color:"var(--border)"}`,background:weather===w?`${cfg.color}20`:"var(--card)",color:weather===w?cfg.color:"var(--dim)",cursor:"pointer",fontSize:12,fontFamily:"'DM Mono',monospace"}}>{w}</button>
             ))}
           </div>
         </div>
         {!isGym&&(
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>ACTUAL PACE (optional)</div>
+            <div style={{fontSize:10,color:"var(--muted)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>ACTUAL PACE (optional)</div>
             <input type="text" placeholder="e.g. 4:28/km avg or 4:26, 4:27, 4:29..." value={pace} onChange={e=>setPace(e.target.value)}/>
           </div>
         )}
         {isGym&&exercises.length>0&&(
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:10}}>WEIGHTS USED</div>
+            <div style={{fontSize:10,color:"var(--muted)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:10}}>WEIGHTS USED</div>
             {exercises.map(ex=>(
               <div key={ex} style={{marginBottom:10}}>
                 <div style={{fontSize:11,color:"#bbb",fontFamily:"'DM Mono',monospace",marginBottom:4}}>{ex}</div>
@@ -550,24 +607,24 @@ function SessionLogModal({session,logKey,existing,onSave,onClose}){
         )}
         <div style={{marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-            <span style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>ACTUAL RPE</span>
+            <span style={{fontSize:10,color:"var(--muted)",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>ACTUAL RPE</span>
             <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:rpe>=8?"#E8FF47":rpe>=6?"#47C8FF":"#47FFB8"}}>{rpe}/10</span>
           </div>
           <Slider value={rpe} onChange={setRpe} min={1} max={10} color={rpe>=8?"#E8FF47":rpe>=6?"#47C8FF":"#47FFB8"} labels={["1","","","","5","","","","","10"]}/>
         </div>
         <div style={{marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-            <span style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>HOW IT FELT</span>
+            <span style={{fontSize:10,color:"var(--muted)",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>HOW IT FELT</span>
             <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:"#FF6B47"}}>{["","Awful","Hard","OK","Good","Great"][feel]}</span>
           </div>
           <Slider value={feel} onChange={setFeel} color="#FF6B47" labels={["Awful","Hard","OK","Good","Great"]}/>
         </div>
         <div style={{marginBottom:20}}>
-          <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>NOTES</div>
+          <div style={{fontSize:10,color:"var(--muted)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>NOTES</div>
           <textarea rows={3} placeholder="How did it go? What to remember for next time..." value={notes} onChange={e=>setNotes(e.target.value)} style={{resize:"none"}}/>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>Cancel</button>
+          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>Cancel</button>
           <button onClick={()=>onSave({pace,rpe,feel,weather,notes,weights:weights2})} style={{flex:2,padding:"12px 0",background:`${cfg.color}20`,border:`1px solid ${cfg.color}50`,borderRadius:8,color:cfg.color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>SAVE LOG</button>
         </div>
       </div>
@@ -580,7 +637,7 @@ function MobilityPanel({type,title,color}){
   const[open,setOpen]=useState(false);
   const moves=MOBILITY[type]||[];
   return(
-    <div style={{background:"#141414",borderRadius:8,marginTop:8,border:`1px solid ${color}25`}}>
+    <div style={{background:"var(--card)",borderRadius:8,marginTop:8,border:`1px solid ${color}25`}}>
       <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",background:"none",border:"none",padding:"10px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:13}}>🧘</span>
@@ -595,7 +652,7 @@ function MobilityPanel({type,title,color}){
               <span style={{fontSize:12,color:"#ccc",fontFamily:"'Barlow',sans-serif",fontWeight:500}}>{m.name}</span>
               <span style={{fontSize:10,color:color,fontFamily:"'DM Mono',monospace"}}>{m.duration}</span>
             </div>
-            <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{m.cue}</div>
+            <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{m.cue}</div>
           </div>
         ))}
       </div>}
@@ -609,7 +666,7 @@ function CooldownPanel({type,color}){
   const text=COOLDOWN[type];
   if(!text)return null;
   return(
-    <div style={{background:"#141414",borderRadius:8,marginTop:8,border:`1px solid ${color}25`}}>
+    <div style={{background:"var(--card)",borderRadius:8,marginTop:8,border:`1px solid ${color}25`}}>
       <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",background:"none",border:"none",padding:"10px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:13}}>🏁</span>
@@ -617,17 +674,17 @@ function CooldownPanel({type,color}){
         </div>
         <span style={{fontSize:12,color:"#444"}}>{open?"▲":"▼"}</span>
       </button>
-      {open&&<div style={{padding:"0 14px 12px",fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.8}}>{text}</div>}
+      {open&&<div style={{padding:"0 14px 12px",fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",lineHeight:1.8}}>{text}</div>}
     </div>
   );
 }
 
 // ── SESSION CARD (collapsible + injury aware) ────────────────────
-function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logData,injuryFlags}){
-  const[collapsed,setCollapsed]=useState(true);
+function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logData,injuryFlags,paces}){
+  const[collapsed,setCollapsed]=useState(false);
   const[tickAnim,setTickAnim]=useState(false);
   const cfg=T[s.type];
-  const cardBg=checked?"#0a140a":isMissed?"#1a0a0a":"#141414";
+  const cardBg=checked?"#0a140a":isMissed?"#1a0a0a":"var(--card)";
   const borderCol=checked?"#47FFB8":isMissed?"#FF4747":cfg.color;
   const injuredZones=Object.entries(injuryFlags||{}).filter(([,v])=>v).map(([k])=>k);
   const hasWarning=injuredZones.some(z=>{const m={"Left hamstring":["run","gym"],"Right hamstring":["run","gym"],"Left calf":["run"],"Right calf":["run"],"Left knee":["run","gym"],"Right knee":["run","gym"],"Lower back":["gym","run"],"Hip flexor":["run","gym"],"Achilles":["run"],"Shoulder":["gym","swim"]};return m[z]&&m[z].includes(s.type);});
@@ -640,18 +697,18 @@ function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logDat
             <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
               <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:checked?"#47FFB8":isMissed?"#FF4747":cfg.color,background:`${checked?"#47FFB8":isMissed?"#FF4747":cfg.color}22`,padding:"2px 7px",borderRadius:3}}>{s.slot}</span>
               {s.time&&s.time!=="-"&&s.time!=="—"&&<span style={{fontSize:9,color:"#777",fontFamily:"'DM Mono',monospace"}}>{s.time}</span>}
-              <span style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace"}}>{s.duration}</span>
+              <span style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>{s.duration}</span>
               {isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FF4747",background:"#FF474718",padding:"2px 7px",borderRadius:3}}>MISSED</span>}
               {hasWarning&&!checked&&!isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FFB347",background:"#FFB34720",padding:"2px 7px",borderRadius:3}}>⚠️ INJURY</span>}
             </div>
-            <div style={{fontFamily:"'Pirata One',cursive",fontSize:19,letterSpacing:1,color:checked?"#47FFB8":isMissed?"#FF6666":"#f0f0f0",textDecoration:isMissed||checked?"line-through":"none"}}>{cfg.icon} {s.title}</div>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:19,letterSpacing:1,color:checked?"#47FFB8":isMissed?"#FF6666":"var(--text)",textDecoration:isMissed||checked?"line-through":"none"}}>{cfg.icon} {s.title}</div>
           </div>
           <div style={{display:"flex",gap:5,marginLeft:10,flexShrink:0,alignItems:"center"}}>
-            {!checked&&!isMissed&&<span style={{fontSize:10,color:"#2a2a2a"}}>{collapsed?"▼":"▲"}</span>}
-            <button onClick={e=>{e.stopPropagation();handleToggle();}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${checked?"#47FFB8":"#2a2a2a"}`,background:checked?"#47FFB825":"#1a1a1a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",animation:tickAnim?"tickBounce 0.4s ease":"none",fontSize:15}}>
+            {!checked&&!isMissed&&<span style={{fontSize:10,color:"var(--border)"}}>{collapsed?"▼":"▲"}</span>}
+            <button onClick={e=>{e.stopPropagation();handleToggle();}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${checked?"#47FFB8":"var(--border)"}`,background:checked?"#47FFB825":"var(--card)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",animation:tickAnim?"tickBounce 0.4s ease":"none",fontSize:15}}>
               <span style={{color:checked?"#47FFB8":"#444"}}>✓</span>
             </button>
-            <button onClick={e=>{e.stopPropagation();onMiss(sessionKey);}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${isMissed?"#FF4747":"#2a2a2a"}`,background:isMissed?"#FF474725":"#1a1a1a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:15}}>
+            <button onClick={e=>{e.stopPropagation();onMiss(sessionKey);}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${isMissed?"#FF4747":"var(--border)"}`,background:isMissed?"#FF474725":"var(--card)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:15}}>
               <span style={{color:isMissed?"#FF4747":"#444"}}>✕</span>
             </button>
           </div>
@@ -661,7 +718,7 @@ function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logDat
         <div style={{padding:"0 14px 14px"}}>
           {hasWarning&&<div style={{background:"#FFB34715",border:"1px solid #FFB34730",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
             <div style={{fontSize:9,color:"#FFB347",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:3}}>INJURY ADVISORY</div>
-            <div style={{fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>You have a flagged niggle that may affect this session. Consider reducing intensity. One modified session beats three missed ones.</div>
+            <div style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>You have a flagged niggle that may affect this session. Consider reducing intensity. One modified session beats three missed ones.</div>
           </div>}
           {s.longRunData&&(
             <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
@@ -671,7 +728,7 @@ function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logDat
           )}
           {s.paceKeys&&s.paceKeys.length>0&&(
             <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
-              {s.paceKeys.map(k=>{const p=PACES[k];if(!p)return null;return(
+              {s.paceKeys.map(k=>{const p=(paces||PACES)[k];if(!p)return null;return(
                 <span key={k} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:10,fontFamily:"'DM Mono',monospace",background:`${p.color}22`,border:`1px solid ${p.color}50`,borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>
                   <span style={{width:6,height:6,borderRadius:"50%",background:p.color,flexShrink:0}}/><span style={{color:p.color,letterSpacing:0.5}}>{p.pace}</span><span style={{color:"#666",letterSpacing:1,fontSize:9}}>{p.label.toUpperCase()}</span>
                 </span>
@@ -679,34 +736,73 @@ function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logDat
             </div>
           )}
           <ul style={{margin:"0 0 8px",padding:0,listStyle:"none"}}>
-            {s.details.map((d,i)=>(<li key={i} style={{fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",padding:"3px 0",borderBottom:i<s.details.length-1?"1px solid #1e1e1e":"none",lineHeight:1.6}}><span style={{color:cfg.color,marginRight:5}}>›</span>{d}</li>))}
+            {s.details.map((d,i)=>(<li key={i} style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",padding:"3px 0",borderBottom:i<s.details.length-1?"1px solid #1e1e1e":"none",lineHeight:1.6}}><span style={{color:cfg.color,marginRight:5}}>›</span>{d}</li>))}
           </ul>
           <div style={{display:"flex",gap:3,alignItems:"center",marginTop:6,marginBottom:8}}>
             <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",marginRight:4,letterSpacing:1}}>RPE</span>
-            {Array.from({length:10}).map((_,i)=>(<div key={i} style={{width:10,height:4,borderRadius:2,background:i<s.rpe?s.rpe>=8?"#E8FF47":s.rpe>=6?"#47C8FF":"#47FFB8":"#2a2a2a"}}/>))}
-            <span style={{fontSize:9,color:"#555",marginLeft:3,fontFamily:"'DM Mono',monospace"}}>{s.rpe}/10</span>
+            {Array.from({length:10}).map((_,i)=>(<div key={i} style={{width:10,height:4,borderRadius:2,background:i<s.rpe?s.rpe>=8?"#E8FF47":s.rpe>=6?"#47C8FF":"#47FFB8":"var(--border)"}}/>))}
+            <span style={{fontSize:9,color:"var(--dim)",marginLeft:3,fontFamily:"'DM Mono',monospace"}}>{s.rpe}/10</span>
           </div>
           {s.preRun&&<MobilityPanel type="preRun" title="PRE-RUN" color={cfg.color}/>}
           {s.cooldown&&<CooldownPanel type={s.cooldown} color={cfg.color}/>}
           {s.mobility&&<MobilityPanel type={s.mobility} title={s.type==="gym"?"POST-GYM MOBILITY":"POST-RUN MOBILITY"} color={cfg.color}/>}
           <div style={{display:"flex",gap:8,marginTop:10,alignItems:"center"}}>
-            <button onClick={onLog} style={{flex:1,padding:"8px 0",background:logData?"#47FFB815":"#1a1a1a",border:`1px solid ${logData?"#47FFB840":"#2a2a2a"}`,borderRadius:6,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,color:logData?"#47FFB8":"#666",letterSpacing:1}}>
+            <button onClick={onLog} style={{flex:1,padding:"8px 0",background:logData?"#47FFB815":"var(--card)",border:`1px solid ${logData?"#47FFB840":"var(--border)"}`,borderRadius:6,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,color:logData?"#47FFB8":"#666",letterSpacing:1}}>
               {logData?"✓ LOGGED — TAP TO EDIT":"📝 LOG THIS SESSION"}
             </button>
             {logData&&<div style={{fontSize:11}}>{["","😖","😤","😐","😊","🤩"][logData.feel]}{logData.weather?" "+logData.weather.split(" ")[0]:""}</div>}
           </div>
           {logData?.pace&&<div style={{fontSize:10,color:"#777",fontFamily:"'DM Mono',monospace",marginTop:4}}>Pace: {logData.pace}</div>}
-          {logData?.notes&&<div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",marginTop:2,lineHeight:1.5}}>"{logData.notes}"</div>}
+          {logData?.notes&&<div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginTop:2,lineHeight:1.5}}>"{logData.notes}"</div>}
         </div>
       )}
       {collapsed&&logData&&(
         <div style={{padding:"0 14px 10px",display:"flex",gap:8,alignItems:"center"}}>
           <span style={{fontSize:10,color:"#47FFB8",fontFamily:"'DM Mono',monospace"}}>✓ Logged</span>
-          {logData.pace&&<span style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace"}}>· {logData.pace}</span>}
+          {logData.pace&&<span style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>· {logData.pace}</span>}
           {logData.weather&&<span style={{fontSize:12}}>{logData.weather.split(" ")[0]}</span>}
           <button onClick={e=>{e.stopPropagation();onLog();}} style={{marginLeft:"auto",fontSize:9,color:"#444",background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Mono',monospace"}}>edit</button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── REST DAY SWAP MODAL ───────────────────────────────────────────
+function SwapModal({week,dayIdx,wkData,swaps,onSave,onClose}){
+  const day=wkData[dayIdx];
+  const[targetDay,setTargetDay]=useState(null);
+  // Find days that have at least one session the current day could absorb
+  const candidates=wkData.map((d,i)=>({...d,idx:i})).filter(d=>d.idx!==dayIdx);
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
+      <div style={{width:"100%",background:"var(--bg2)",borderRadius:"16px 16px 0 0",padding:24,animation:"slideIn 0.2s ease"}}>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,color:"#47C8FF",marginBottom:4}}>Swap Rest Day</div>
+        <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>
+          MOVE {day.label.toUpperCase()} SESSIONS TO ANOTHER DAY
+        </div>
+        <div style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginBottom:16}}>
+          Life got in the way? Select the day you want to move {day.label}'s sessions to. The days will swap — that day's sessions move to {day.label}.
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>
+          {candidates.map(d=>{
+            const main=T[d.sessions[0].type];
+            return(
+              <button key={d.idx} onClick={()=>setTargetDay(d.idx===targetDay?null:d.idx)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:8,border:`1px solid ${targetDay===d.idx?main.color:"var(--border)"}`,background:targetDay===d.idx?`${main.color}18`:"var(--card)",cursor:"pointer",textAlign:"left"}}>
+                <div>
+                  <div style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:targetDay===d.idx?main.color:"#ccc",letterSpacing:1}}>{d.label}</div>
+                  <div style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"var(--dim)",marginTop:1}}>{d.sessions.map(s=>s.title).join(" + ")}</div>
+                </div>
+                {targetDay===d.idx&&<span style={{color:main.color,fontSize:16}}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>CANCEL</button>
+          <button disabled={targetDay===null} onClick={()=>onSave(dayIdx,targetDay)} style={{flex:2,padding:"12px 0",background:targetDay!==null?"#47C8FF20":"var(--border)",border:`1px solid ${targetDay!==null?"#47C8FF50":"var(--border)"}`,borderRadius:8,color:targetDay!==null?"#47C8FF":"#444",cursor:targetDay!==null?"pointer":"default",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>CONFIRM SWAP</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -760,9 +856,9 @@ function StatsTab({sessionLogs,fiveKTimes,setFiveKTimes}){
       <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:14}}>Stats</div>
 
       {/* Pace Calculator */}
-      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+      <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
         <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#E8FF47",marginBottom:10}}>PACE CALCULATOR</div>
-        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginBottom:10}}>Enter your actual 400m rep pace to see if you're on target and what to aim for next session.</div>
+        <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginBottom:10}}>Enter your actual 400m rep pace to see if you're on target and what to aim for next session.</div>
         <div style={{display:"flex",gap:8,marginBottom:10}}>
           <input type="text" placeholder="e.g. 4:28" value={paceInput} onChange={e=>setPaceInput(e.target.value)} style={{flex:1}}/>
           <button onClick={calcPace} style={{padding:"8px 14px",background:"#E8FF4720",border:"1px solid #E8FF4740",borderRadius:6,color:"#E8FF47",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>CHECK</button>
@@ -782,17 +878,17 @@ function StatsTab({sessionLogs,fiveKTimes,setFiveKTimes}){
       </div>
 
       {/* 5K Progress */}
-      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+      <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
         <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#FF6B47",marginBottom:12}}>5K PROGRESS GRAPH</div>
         <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
           <input type="text" placeholder="mm:ss e.g. 22:45" value={newTime} onChange={e=>setNewTime(e.target.value)} style={{flex:1,minWidth:100}}/>
-          <select value={newWk} onChange={e=>setNewWk(Number(e.target.value))} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:6,color:"#f0f0f0",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",outline:"none"}}>
+          <select value={newWk} onChange={e=>setNewWk(Number(e.target.value))} style={{background:"var(--card)",border:"1px solid #2a2a2a",borderRadius:6,color:"var(--text)",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",outline:"none"}}>
             {Array.from({length:12},(_,i)=><option key={i+1} value={i+1}>Week {i+1}</option>)}
           </select>
           <button onClick={addTime} style={{padding:"8px 12px",background:"#FF6B4720",border:"1px solid #FF6B4740",borderRadius:6,color:"#FF6B47",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>ADD</button>
         </div>
         {sortedTimes.length===0?(
-          <div style={{textAlign:"center",padding:"20px 0",color:"#2a2a2a",fontFamily:"'DM Mono',monospace",fontSize:11}}>Log time trials to see your progress</div>
+          <div style={{textAlign:"center",padding:"20px 0",color:"var(--border)",fontFamily:"'DM Mono',monospace",fontSize:11}}>Log time trials to see your progress</div>
         ):(
           <div>
             <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="none" style={{overflow:"visible"}}>
@@ -806,7 +902,7 @@ function StatsTab({sessionLogs,fiveKTimes,setFiveKTimes}){
                 const col=s<=target?"#47FFB8":"#FF6B47";
                 return<g key={i}>
                   <rect x={x-10} y={110-barH} width={20} height={barH} fill={col} opacity={0.65} rx="2"/>
-                  <text x={x} y={125} textAnchor="middle" fill="#555" fontSize="8" fontFamily="DM Mono,monospace">W{t.week}</text>
+                  <text x={x} y={125} textAnchor="middle" fill="var(--dim)" fontSize="8" fontFamily="DM Mono,monospace">W{t.week}</text>
                   <text x={x} y={110-barH-5} textAnchor="middle" fill={col} fontSize="8" fontFamily="DM Mono,monospace">{t.time}</text>
                 </g>;
               })}
@@ -819,25 +915,168 @@ function StatsTab({sessionLogs,fiveKTimes,setFiveKTimes}){
       </div>
 
       {/* Personal Records */}
-      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+      <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
         <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#FFB347",marginBottom:12}}>🏆 PERSONAL RECORDS</div>
-        <div style={{padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+        <div style={{padding:"8px 0",borderBottom:`1px solid var(--border)`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><div style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>FASTEST PACE LOGGED</div>
+            <div><div style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>FASTEST PACE LOGGED</div>
             <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:"#FFB347",marginTop:2}}>{prs.fastest?secsToStr(prs.fastest)+"/km":"—"}</div></div>
             <span style={{fontSize:22}}>⚡</span>
           </div>
         </div>
         {Object.entries(prs.heaviest).slice(0,5).map(([ex,kg])=>(
-          <div key={ex} style={{padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+          <div key={ex} style={{padding:"8px 0",borderBottom:`1px solid var(--border)`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div><div style={{fontSize:9,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>{ex.toUpperCase()}</div>
+              <div><div style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>{ex.toUpperCase()}</div>
               <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:"#FF6B47",marginTop:2}}>{kg}kg</div></div>
               <span style={{fontSize:20}}>💪</span>
             </div>
           </div>
         ))}
-        {!prs.fastest&&Object.keys(prs.heaviest).length===0&&<div style={{fontSize:11,color:"#2a2a2a",fontFamily:"'DM Mono',monospace",textAlign:"center",padding:"8px 0"}}>Log sessions to start building your records</div>}
+        {!prs.fastest&&Object.keys(prs.heaviest).length===0&&<div style={{fontSize:11,color:"var(--border)",fontFamily:"'DM Mono',monospace",textAlign:"center",padding:"8px 0"}}>Log sessions to start building your records</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── SHARE WEEK MODAL ──────────────────────────────────────────────
+function ShareWeekModal({week,wkNum,wkData,checked,missed,sessionLogs,phase,startDate,onClose}){
+  const canvasRef=React.useRef(null);
+  const sKey2=(w,di,si)=>`${w}-${di}-${si}`;
+
+  React.useEffect(()=>{
+    const canvas=canvasRef.current;
+    if(!canvas)return;
+    const ctx=canvas.getContext("2d");
+    const W=canvas.width,H=canvas.height;
+
+    // Background
+    ctx.fillStyle="var(--bg)";
+    ctx.fillRect(0,0,W,H);
+
+    // Top accent bar
+    ctx.fillStyle=phase?.color??"#E8FF47";
+    ctx.fillRect(0,0,W,4);
+
+    // Title
+    ctx.fillStyle="var(--text)";
+    ctx.font="bold 28px serif";
+    ctx.fillText("SUPPER CLUB",20,44);
+
+    ctx.fillStyle=phase?.color??"#E8FF47";
+    ctx.font="14px monospace";
+    ctx.fillText(`WEEK ${wkNum} · ${phase?.label.split("—")[1].trim().toUpperCase()??""}`,20,66);
+
+    if(startDate){
+      const d=addDays(new Date(startDate),(week)*7);
+      ctx.fillStyle="#444";
+      ctx.font="11px monospace";
+      ctx.fillText(d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),20,84);
+    }
+
+    // Separator
+    ctx.fillStyle="var(--border)";
+    ctx.fillRect(0,96,W,1);
+
+    // Sessions
+    let y=116;
+    const typeColors={run:"#E8FF47",cycle:"#47C8FF",swim:"#47FFB8",gym:"#FF6B47",rest:"var(--muted)"};
+    wkData.forEach((day,di)=>{
+      day.sessions.forEach((s,si)=>{
+        const k=sKey2(week,di,si);
+        const isDone=checked[k];
+        const isMiss=missed[k];
+        const log=sessionLogs[`log-${week}-${di}-${si}`];
+        const col=typeColors[s.type]||"var(--muted)";
+
+        // dot
+        ctx.fillStyle=isDone?"#47FFB8":isMiss?"#FF4747":col;
+        ctx.beginPath();ctx.arc(20,y-4,4,0,Math.PI*2);ctx.fill();
+
+        // day label
+        ctx.fillStyle="var(--dim)";
+        ctx.font="10px monospace";
+        ctx.fillText(day.day,32,y);
+
+        // session name
+        ctx.fillStyle=isDone?"#47FFB8":isMiss?"#666":"#ccc";
+        ctx.font=`${isDone||isMiss?"italic ":""}12px monospace`;
+        const title=s.title.length>28?s.title.slice(0,27)+"…":s.title;
+        ctx.fillText(title,72,y);
+
+        // status / pace
+        if(isDone){
+          ctx.fillStyle="#47FFB8";
+          ctx.font="10px monospace";
+          ctx.fillText(log?.pace?`✓ ${log.pace}`:"✓ DONE",W-120,y);
+        } else if(isMiss){
+          ctx.fillStyle="#FF4747";
+          ctx.font="10px monospace";
+          ctx.fillText("✗ MISSED",W-90,y);
+        }
+
+        y+=22;
+        if(y>H-80)return;
+      });
+    });
+
+    // Stats bar
+    const done=wkData.reduce((a,d,di)=>a+d.sessions.filter((_,si)=>checked[sKey2(week,di,si)]).length,0);
+    const total=wkData.reduce((a,d)=>a+d.sessions.length,0);
+    const miss=wkData.reduce((a,d,di)=>a+d.sessions.filter((_,si)=>missed[sKey2(week,di,si)]).length,0);
+
+    ctx.fillStyle="var(--card)";
+    ctx.roundRect(16,H-68,W-32,52,8);
+    ctx.fill();
+
+    ctx.fillStyle=phase?.color??"#E8FF47";
+    ctx.font="bold 20px serif";
+    ctx.fillText(`${done}/${total}`,24,H-40);
+    ctx.fillStyle="var(--dim)";
+    ctx.font="10px monospace";
+    ctx.fillText("SESSIONS DONE",24,H-24);
+
+    if(miss>0){
+      ctx.fillStyle="#FF4747";
+      ctx.font="bold 20px serif";
+      ctx.fillText(`${miss}`,120,H-40);
+      ctx.fillStyle="var(--dim)";
+      ctx.font="10px monospace";
+      ctx.fillText("MISSED",120,H-24);
+    }
+
+    ctx.fillStyle="var(--vdim)";
+    ctx.font="10px monospace";
+    ctx.fillText("harryjudge.github.io/thesupperclub",W-260,H-24);
+
+  },[week,checked,missed,sessionLogs]);
+
+  const download=()=>{
+    const canvas=canvasRef.current;
+    const url=canvas.toDataURL("image/png");
+    const a=document.createElement("a");a.href=url;a.download=`supperclub-week${wkNum}.png`;a.click();
+  };
+
+  const share=async()=>{
+    const canvas=canvasRef.current;
+    canvas.toBlob(async blob=>{
+      const file=new File([blob],`supperclub-week${wkNum}.png`,{type:"image/png"});
+      if(navigator.share&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:`Supper Club — Week ${wkNum}`,text:`Week ${wkNum} training card`});
+      } else { download(); }
+    });
+  };
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:2000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{width:"100%",maxWidth:400,background:"var(--bg2)",borderRadius:16,padding:20,animation:"slideIn 0.3s ease"}}>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,marginBottom:12}}>Week {wkNum} Card</div>
+        <canvas ref={canvasRef} width={400} height={Math.min(120+wkData.reduce((a,d)=>a+d.sessions.length,0)*22+80,600)} style={{width:"100%",borderRadius:8,marginBottom:12,border:`1px solid var(--border)`}}/>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={onClose} style={{flex:1,padding:"11px 0",background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:8,color:"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>CLOSE</button>
+          <button onClick={download} style={{flex:1,padding:"11px 0",background:"#47C8FF18",border:"1px solid #47C8FF40",borderRadius:8,color:"#47C8FF",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>↓ SAVE</button>
+          <button onClick={share} style={{flex:1,padding:"11px 0",background:"#E8FF4720",border:"1px solid #E8FF4750",borderRadius:8,color:"#E8FF47",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>↑ SHARE</button>
+        </div>
       </div>
     </div>
   );
@@ -854,7 +1093,7 @@ function RaceDayTab(){
     <div style={{padding:"16px 20px 0"}}>
       <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>Race Day</div>
       <div style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:14}}>WEEK 12 · 5K TIME TRIAL PREP</div>
-      <div style={{background:"#141414",borderRadius:8,padding:"12px 14px",marginBottom:16}}>
+      <div style={{background:"var(--card)",borderRadius:8,padding:"12px 14px",marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
           <span style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>CHECKLIST PROGRESS</span>
           <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:done===total?"#47FFB8":"#FF6B47"}}>{done}/{total}</span>
@@ -866,13 +1105,13 @@ function RaceDayTab(){
       {RACE_CHECKLIST.map((section,si)=>(
         <div key={si} style={{marginBottom:16}}>
           <div style={{fontSize:9,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:3,marginBottom:8}}>{section.section}</div>
-          <div style={{background:"#141414",borderRadius:8,overflow:"hidden"}}>
+          <div style={{background:"var(--card)",borderRadius:8,overflow:"hidden"}}>
             {section.items.map((item,ii)=>{
               const key=`${si}-${ii}`;
               const done2=checks[key];
               return(
                 <button key={ii} onClick={()=>toggle(key)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"11px 14px",background:"none",border:"none",borderBottom:ii<section.items.length-1?"1px solid #1e1e1e":"none",cursor:"pointer",textAlign:"left"}}>
-                  <div style={{width:22,height:22,borderRadius:5,border:`2px solid ${done2?"#47FFB8":"#333"}`,background:done2?"#47FFB820":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <div style={{width:22,height:22,borderRadius:5,border:`2px solid ${done2?"#47FFB8":"var(--vdim)"}`,background:done2?"#47FFB820":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     {done2&&<span style={{color:"#47FFB8",fontSize:12}}>✓</span>}
                   </div>
                   <span style={{fontSize:12,color:done2?"#47FFB8":"#bbb",fontFamily:"'DM Mono',monospace",lineHeight:1.5,textDecoration:done2?"line-through":"none"}}>{item}</span>
@@ -898,7 +1137,7 @@ function PostPlanTab(){
     <div style={{padding:"16px 20px 0"}}>
       <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>What's Next</div>
       <div style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>POST-PLAN PROGRESSION GUIDE</div>
-      <div style={{background:"#141414",borderRadius:8,padding:"14px",marginBottom:16}}>
+      <div style={{background:"var(--card)",borderRadius:8,padding:"14px",marginBottom:16}}>
         <div style={{fontSize:10,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>LOG YOUR 5K TEST TIME</div>
         <div style={{display:"flex",gap:8}}>
           <input type="text" placeholder="e.g. 22:34 (mm:ss)" value={time} onChange={e=>setTime(e.target.value)} style={{flex:1}}/>
@@ -912,10 +1151,10 @@ function PostPlanTab(){
             <div style={{fontFamily:"'Pirata One',cursive",fontSize:32,color:"#47FFB8",letterSpacing:2}}>{time}</div>
             <div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",marginTop:4}}>5K Time Trial · Week 12</div>
           </div>
-          <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+          <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
             <div style={{fontSize:9,color:"#E8FF47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:12}}>YOUR NEW TRAINING PACES</div>
             {[["Easy / Z2",targets.easy,"#47FFB8"],["Tempo",targets.tempo,"#E8FF47"],["400m Reps",targets.reps,"#FF4747"],["10K Pace",targets.tenK,"#FF8C47"]].map(([lbl,val,col])=>(
-              <div key={lbl} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+              <div key={lbl} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid var(--border)`}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:6,height:6,borderRadius:"50%",background:col}}/>
                   <span style={{fontSize:12,color:"#bbb",fontFamily:"'Barlow',sans-serif"}}>{lbl}</span>
@@ -931,13 +1170,13 @@ function PostPlanTab(){
           </div>
         </div>
       )}
-      <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
+      <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
         <div style={{fontSize:9,color:"#47C8FF",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:10}}>PROGRESSION LADDER</div>
         {Object.entries(POST_PLAN_TARGETS).map(([key,val])=>(
-          <div key={key} style={{padding:"8px 0",borderBottom:"1px solid #1e1e1e"}}>
+          <div key={key} style={{padding:"8px 0",borderBottom:`1px solid var(--border)`}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
               <span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"#47C8FF",letterSpacing:1}}>{key}</span>
-              <span style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace"}}>→ {val.nextGoal.split(" in")[0]}</span>
+              <span style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>→ {val.nextGoal.split(" in")[0]}</span>
             </div>
             <div style={{fontSize:9,color:"#444",fontFamily:"'DM Mono',monospace"}}>Easy: {val.easy} · Tempo: {val.tempo} · Reps: {val.reps}</div>
           </div>
@@ -951,7 +1190,7 @@ function PostPlanTab(){
 function App(){
   const[week,setWeek]=useState(0);
   const[dayIdx,setDayIdx]=useState(0);
-  const[view,setView]=useState("training");
+  const[view,setView]=useState("day");
   const[checked,setChecked]=useState(()=>{try{const s=localStorage.getItem("sc_progress");return s?JSON.parse(s):{}}catch{return{}}});
   const[missed,setMissed]=useState(()=>{try{const s=localStorage.getItem("sc_missed");return s?JSON.parse(s):{}}catch{return{}}});
   const[sessionLogs,setSessionLogs]=useState(()=>{try{const s=localStorage.getItem("sc_logs");return s?JSON.parse(s):{}}catch{return{}}});
@@ -961,7 +1200,15 @@ function App(){
   const[weekNotes,setWeekNotes]=useState(()=>{try{const s=localStorage.getItem("sc_weeknotes");return s?JSON.parse(s):{}}catch{return{}}});
   const[injuryFlags,setInjuryFlags]=useState(()=>{try{const s=localStorage.getItem("sc_injuries");return s?JSON.parse(s):{}}catch{return{}}});
   const[fiveKTimes,setFiveKTimes]=useState(()=>{try{const s=localStorage.getItem("sc_5ktimes");return s?JSON.parse(s):[]}catch{return[]}});
+  const[easyPaceSecs,setEasyPaceSecs]=useState(()=>{try{return parseInt(localStorage.getItem("sc_easypace")||"360")}catch{return 360}});
+  useEffect(()=>{try{localStorage.setItem("sc_easypace",easyPaceSecs)}catch{}},[easyPaceSecs]);
+  const PACES_COMPUTED=computePaces(easyPaceSecs);
   const[showInjury,setShowInjury]=useState(false);
+  const[showReset,setShowReset]=useState(false);
+  const[showOverview,setShowOverview]=useState(false);
+  const[showSwap,setShowSwap]=useState(false);
+  const[showShare,setShowShare]=useState(false);
+  const[swaps,setSwaps]=useState(()=>{try{const s=localStorage.getItem("sc_swaps");return s?JSON.parse(s):{}}catch{return{}}});
   const[toast,setToast]=useState(null);
   const[showReadiness,setShowReadiness]=useState(false);
   const[logModal,setLogModal]=useState(null);
@@ -976,11 +1223,26 @@ function App(){
   useEffect(()=>{try{localStorage.setItem("sc_weeknotes",JSON.stringify(weekNotes))}catch{}},[weekNotes]);
   useEffect(()=>{try{localStorage.setItem("sc_injuries",JSON.stringify(injuryFlags))}catch{}},[injuryFlags]);
   useEffect(()=>{try{localStorage.setItem("sc_theme",theme)}catch{}},[theme]);
+  useEffect(()=>{try{localStorage.setItem("sc_swaps",JSON.stringify(swaps))}catch{}},[swaps]);
+
+  const handleSwap=(fromIdx,toIdx)=>{
+    // Record swap for this week: swap fromIdx and toIdx day indices
+    const key=`${week}`;
+    setSwaps(p=>{
+      const wkSwaps={...(p[key]||{})};
+      // Toggle: if already swapped back, remove
+      if(wkSwaps[fromIdx]===toIdx){delete wkSwaps[fromIdx];delete wkSwaps[toIdx];}
+      else{wkSwaps[fromIdx]=toIdx;wkSwaps[toIdx]=fromIdx;}
+      return{...p,[key]:wkSwaps};
+    });
+    setShowSwap(false);
+    showToast(`${wkData[fromIdx].label} ⇄ ${wkData[toIdx].label}`);
+  };
 
   const showToast=msg=>{setToast(msg);clearTimeout(toastRef.current);toastRef.current=setTimeout(()=>setToast(null),2400)};
-  const handleTouchStart=e=>{if(view==="training")touchStartX.current=e.touches[0].clientX;};
+  const handleTouchStart=e=>{if(view==="day")touchStartX.current=e.touches[0].clientX;};
   const handleTouchEnd=e=>{
-    if(touchStartX.current===null||view!=="training")return;
+    if(touchStartX.current===null||view!=="day")return;
     const diff=touchStartX.current-e.changedTouches[0].clientX;
     if(Math.abs(diff)>60){
       if(diff>0)setDayIdx(i=>Math.min(i+1,weekData[week].length-1));
@@ -1047,6 +1309,29 @@ function App(){
   const todayKey=`r-${week}-${dayIdx}`;
   const todayReadiness=readiness[todayKey];
 
+  const resetPlan=()=>{
+    ["sc_progress","sc_missed","sc_logs","sc_readiness","sc_weeknotes","sc_5ktimes","sc_racechecks","sc_startdate"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
+    setChecked({});setMissed({});setSessionLogs({});setReadiness({});setWeekNotes({});setFiveKTimes([]);
+    setWeek(0);setDayIdx(0);setStartDate(null);setShowReset(false);
+    showToast("Plan reset — set a new start date");
+  };
+
+  // Load score: sum of (RPE × session count) for completed sessions in a week
+  const wkLoadScore=w=>{
+    let total=0;
+    weekData[w].forEach((day,di)=>{
+      day.sessions.forEach((s,si)=>{
+        const k=sKey(w,di,si);
+        if(checked[k]){
+          const log=sessionLogs[`log-${w}-${di}-${si}`];
+          total+=(log?.rpe||s.rpe);
+        }
+      });
+    });
+    return total;
+  };
+  const maxLoad=Math.max(...Array.from({length:12},(_,i)=>wkLoadScore(i)),1);
+
   const exportWeek=()=>{
     let txt=`SUPPER CLUB — Week ${wkNum}\n${"=".repeat(28)}\n\n`;
     if(startDate)txt+=`Week of ${addDays(new Date(startDate),week*7).toLocaleDateString("en-GB",{day:"numeric",month:"long"})}\n\n`;
@@ -1067,41 +1352,61 @@ function App(){
     showToast("Week exported ✓");
   };
 
-  const tabs=[["training","SESSIONS"],["nutrition","NUTRITION"],["paces","PACES"],["stats","STATS"],["overview","OVERVIEW"],["race","RACE DAY"],["next","NEXT STEPS"]];
+  const tabs=[["day","DAY"],["paces","PACES"],["stats","STATS"],["race","RACE DAY"],["next","NEXT STEPS"]];
 
   if(!startDate){
     return <CalendarSetupModal onSave={d=>{setStartDate(d);try{localStorage.setItem("sc_startdate",d)}catch{}}}/>;
   }
 
   return(
-    <div style={{minHeight:"100vh",background:theme==="amber"?"#080500":"#0a0a0a",color:theme==="amber"?"#f5e6c0":"#f0f0f0",fontFamily:"'Barlow',sans-serif",paddingBottom:60}}
+    <div className={theme==="crimson"?"theme-crimson":""} style={{minHeight:"100vh",background:"var(--bg)",color:"var(--text)",fontFamily:"'Barlow',sans-serif",paddingBottom:60}}
       onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {toast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#1a2a1a",border:"1px solid #47FFB860",borderRadius:10,padding:"10px 18px",fontSize:12,fontFamily:"'DM Mono',monospace",color:"#47FFB8",boxShadow:"0 4px 24px rgba(0,0,0,0.7)",whiteSpace:"nowrap",animation:"fadeIn 0.2s ease"}}>{toast}</div>}
       {showReadiness&&<ReadinessModal dateKey={todayKey} existing={todayReadiness} onSave={d=>{setReadiness(p=>({...p,[todayKey]:d}));setShowReadiness(false);showToast("Readiness saved ✓")}} onClose={()=>setShowReadiness(false)}/>}
       {logModal&&<SessionLogModal session={logModal.session} logKey={logModal.key} existing={sessionLogs[logModal.key]} onSave={d=>{setSessionLogs(p=>({...p,[logModal.key]:d}));setLogModal(null);showToast("Session logged ✓")}} onClose={()=>setLogModal(null)}/>}
 
+      {/* RESET MODAL */}
+      {showReset&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{width:"100%",maxWidth:320,background:"var(--bg2)",borderRadius:16,padding:24,animation:"slideIn 0.2s ease",border:"1px solid #FF474740"}}>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:24,letterSpacing:2,color:"#FF4747",marginBottom:8}}>Reset Plan?</div>
+            <div style={{fontSize:12,color:"var(--muted)",fontFamily:"'DM Mono',monospace",lineHeight:1.7,marginBottom:20}}>
+              This wipes all progress, session logs, readiness checks, 5K times and week notes. Your injury flags and theme stay.<br/><br/>
+              <span style={{color:"#FF4747"}}>This cannot be undone.</span>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setShowReset(false)} style={{flex:1,padding:"12px 0",background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:8,color:"var(--muted)",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:12}}>CANCEL</button>
+              <button onClick={resetPlan} style={{flex:1,padding:"12px 0",background:"#FF474720",border:"1px solid #FF474750",borderRadius:8,color:"#FF4747",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:16,letterSpacing:1}}>RESET</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSwap&&<SwapModal week={week} dayIdx={dayIdx} wkData={wkData} swaps={swaps} onSave={handleSwap} onClose={()=>setShowSwap(false)}/>}
+      {showShare&&<ShareWeekModal week={week} wkNum={wkNum} wkData={wkData} checked={checked} missed={missed} sessionLogs={sessionLogs} phase={phase} startDate={startDate} onClose={()=>setShowShare(false)}/>}
+
       {/* INJURY MODAL */}
       {showInjury&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
-          <div style={{width:"100%",background:"#111",borderRadius:"16px 16px 0 0",padding:24,animation:"slideIn 0.2s ease"}}>
+          <div style={{width:"100%",background:"var(--bg2)",borderRadius:"16px 16px 0 0",padding:24,animation:"slideIn 0.2s ease"}}>
             <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,color:"#FFB347",marginBottom:4}}>Injury Flags</div>
-            <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>SESSIONS WILL SHOW A WARNING FOR FLAGGED AREAS</div>
+            <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>SESSIONS WILL SHOW A WARNING FOR FLAGGED AREAS</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
               {INJURY_ZONES.map(z=>{
                 const active=injuryFlags[z];
-                return(<button key={z} onClick={()=>setInjuryFlags(p=>({...p,[z]:!p[z]}))} style={{padding:"8px 12px",borderRadius:8,border:`1px solid ${active?"#FFB347":"#2a2a2a"}`,background:active?"#FFB34720":"#1a1a1a",color:active?"#FFB347":"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>{active?"⚠️ ":""}{z}</button>);
+                return(<button key={z} onClick={()=>setInjuryFlags(p=>({...p,[z]:!p[z]}))} style={{padding:"8px 12px",borderRadius:8,border:`1px solid ${active?"#FFB347":"var(--border)"}`,background:active?"#FFB34720":"var(--card)",color:active?"#FFB347":"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>{active?"⚠️ ":""}{z}</button>);
               })}
             </div>
-            <button onClick={()=>setShowInjury(false)} style={{width:"100%",padding:"12px 0",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:8,color:"#888",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>DONE</button>
+            <button onClick={()=>setShowInjury(false)} style={{width:"100%",padding:"12px 0",background:"var(--border)",border:"1px solid #2a2a2a",borderRadius:8,color:"var(--muted)",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>DONE</button>
           </div>
         </div>
       )}
 
       {/* HEADER */}
-      <div style={{background:"#0a0a0a",padding:"44px 20px 14px",borderBottom:"1px solid #1e1e1e"}}>
+      <div style={{background:"var(--bg)",padding:"44px 20px 14px",borderBottom:`1px solid var(--border)`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#555",marginBottom:4}}>12-WEEK ATHLETE PERFORMANCE PLAN</div>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"var(--dim)",marginBottom:4}}>12-WEEK ATHLETE PERFORMANCE PLAN</div>
             <h1 style={{fontFamily:"'Pirata One',cursive",fontSize:34,margin:0,lineHeight:1.1,letterSpacing:2}}>
               SUPPER CLUB<br/>
               <span style={{color:phase?.color??"#E8FF47"}}>{isPeak?"TEST YOURSELF.":isDeload?"RECOVER HARDER.":(phase?.label.split("—")[1].trim()??"BUILD")+"."}</span>
@@ -1109,50 +1414,80 @@ function App(){
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
             {/* Readiness */}
-            <button onClick={()=>setShowReadiness(true)} style={{background:todayReadiness?`${todayReadiness.avg>=4?"#47FFB8":todayReadiness.avg>=3?"#E8FF47":todayReadiness.avg>=2?"#FFB347":"#FF4747"}15`:"#141414",border:`1px solid ${todayReadiness?todayReadiness.avg>=4?"#47FFB840":todayReadiness.avg>=3?"#E8FF4740":todayReadiness.avg>=2?"#FFB34740":"#FF474740":"#222"}`,borderRadius:10,padding:"7px 10px",cursor:"pointer",textAlign:"center",minWidth:54}}>
+            <button onClick={()=>setShowReadiness(true)} style={{background:todayReadiness?`${todayReadiness.avg>=4?"#47FFB8":todayReadiness.avg>=3?"#E8FF47":todayReadiness.avg>=2?"#FFB347":"#FF4747"}15`:"var(--card)",border:`1px solid ${todayReadiness?todayReadiness.avg>=4?"#47FFB840":todayReadiness.avg>=3?"#E8FF4740":todayReadiness.avg>=2?"#FFB34740":"#FF474740":"#222"}`,borderRadius:10,padding:"7px 10px",cursor:"pointer",textAlign:"center",minWidth:54}}>
               <div style={{fontSize:16}}>{todayReadiness?["😖","😤","😐","😊","🤩"][Math.round(todayReadiness.avg)-1]:"💤"}</div>
               <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:2,letterSpacing:1}}>{todayReadiness?`${todayReadiness.avg}/5`:"READY?"}</div>
             </button>
             {/* Theme toggle */}
-            <button onClick={()=>setTheme(t=>t==="dark"?"amber":"dark")} style={{background:"#141414",border:"1px solid #222",borderRadius:8,padding:"5px 8px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,color:theme==="amber"?"#ffb000":"#666",letterSpacing:1}}>
-              {theme==="amber"?"🌙 DARK":"🟡 AMBER"}
+            <button onClick={()=>setTheme(t=>t==="dark"?"crimson":"dark")} style={{background:theme==="crimson"?"#2d0808":"var(--card)",border:`1px solid ${theme==="crimson"?"#ff444440":"#222"}`,borderRadius:8,padding:"5px 8px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,color:theme==="crimson"?"#ff4444":"#666",letterSpacing:1}}>
+              {theme==="crimson"?"🌙 DARK":"🩸 CRIMSON"}
             </button>
           </div>
         </div>
 
-        {/* Streak + date chips */}
+        {/* Streak + date + countdown chips */}
         <div style={{display:"flex",gap:8,marginTop:10,marginBottom:4,flexWrap:"wrap"}}>
           {streak>0&&<div style={{background:"#E8FF4712",border:"1px solid #E8FF4730",borderRadius:6,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}>
             <span style={{fontSize:12}}>🔥</span>
             <span style={{fontFamily:"'Pirata One',cursive",fontSize:14,color:"#E8FF47"}}>{streak} day streak</span>
           </div>}
+          {/* Next session countdown */}
+          {(()=>{
+            if(!startDate)return null;
+            const now=new Date();
+            // Find next unchecked session with a real time
+            for(let w=week;w<12;w++){
+              for(let di=0;di<weekData[w].length;di++){
+                const day=weekData[w][di];
+                for(let si=0;si<day.sessions.length;si++){
+                  const k=sKey(w,di,si);
+                  if(checked[k]||missed[k])continue;
+                  const s=day.sessions[si];
+                  if(!s.time||s.time==="-"||s.time==="—")continue;
+                  const sessionDate=addDays(new Date(startDate),w*7+di);
+                  const[hh,mm]=s.time.split(":").map(Number);
+                  sessionDate.setHours(hh,mm,0,0);
+                  const diffMs=sessionDate-now;
+                  if(diffMs<0)continue;
+                  const diffH=Math.floor(diffMs/3600000);
+                  const diffM=Math.floor((diffMs%3600000)/60000);
+                  const label=diffH>24?`${Math.floor(diffH/24)}d ${diffH%24}h`:diffH>0?`${diffH}h ${diffM}m`:`${diffM}m`;
+                  const cfg=T[s.type];
+                  return(
+                    <div style={{background:`${cfg.color}12`,border:`1px solid ${cfg.color}30`,borderRadius:6,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}>
+                      <span style={{fontSize:10}}>⏱</span>
+                      <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:cfg.color}}>{label} · {s.title.split(" ").slice(0,2).join(" ")}</span>
+                    </div>
+                  );
+                }
+              }
+            }
+            return null;
+          })()}
           {Object.values(injuryFlags).some(Boolean)&&<button onClick={()=>setShowInjury(true)} style={{background:"#FFB34715",border:"1px solid #FFB34730",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,color:"#FFB347"}}>
             ⚠️ {Object.values(injuryFlags).filter(Boolean).length} niggle{Object.values(injuryFlags).filter(Boolean).length>1?"s":""}
           </button>}
-          {dayDate&&<div style={{background:"#141414",border:"1px solid #1e1e1e",borderRadius:6,padding:"4px 10px"}}>
-            <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"#555"}}>{fmtDate(dayDate)}</span>
+          {dayDate&&<div style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,padding:"4px 10px"}}>
+            <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"var(--dim)"}}>{fmtDate(dayDate)}</span>
           </div>}
-        </div>
-
-        {/* Weekly intention */}
-        <div style={{background:"#141414",borderRadius:8,padding:"10px 12px",marginTop:12,borderLeft:`3px solid ${phase?.color??"#E8FF47"}`}}>
-          <div style={{fontSize:8,color:"#444",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:3}}>WEEK {wkNum} INTENTION</div>
-          <div style={{fontSize:12,color:"#bbb",fontFamily:"'DM Mono',monospace",lineHeight:1.5,fontStyle:"italic"}}>"{INTENTIONS[week]}"</div>
         </div>
 
         {/* Phase bar */}
         <div style={{display:"flex",gap:0,marginTop:12,borderRadius:6,overflow:"hidden"}}>
           {phases.map(ph=>(
-            <div key={ph.label} style={{flex:1,padding:"5px 0 5px 8px",background:ph.weeks.includes(wkNum)?`${ph.color}20`:"#141414",borderBottom:ph.weeks.includes(wkNum)?`2px solid ${ph.color}`:"2px solid #1e1e1e"}}>
+            <div key={ph.label} style={{flex:1,padding:"5px 0 5px 8px",background:ph.weeks.includes(wkNum)?`${ph.color}20`:"var(--card)",borderBottom:ph.weeks.includes(wkNum)?`2px solid ${ph.color}`:"2px solid #1e1e1e"}}>
               <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:1,color:ph.weeks.includes(wkNum)?ph.color:"#444"}}>{ph.label.split("—")[1].trim()} {ph.weeks[0]}–{ph.weeks[ph.weeks.length-1]}</div>
             </div>
           ))}
         </div>
 
-        {/* OVERALL PROGRESS */}
-        <div style={{marginTop:12,background:"#141414",borderRadius:8,padding:"12px 14px"}}>
+        {/* OVERALL PROGRESS — tap to expand inline overview */}
+        <div style={{marginTop:12,background:"var(--card)",borderRadius:8,padding:"12px 14px",cursor:"pointer"}} onClick={()=>setShowOverview(o=>!o)}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
-            <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#666"}}>OVERALL PROGRESS</span>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#666"}}>OVERALL PROGRESS</span>
+              <span style={{fontSize:9,color:"var(--vdim)"}}>{showOverview?"▲":"▼"}</span>
+            </div>
             <div style={{display:"flex",gap:10,alignItems:"baseline"}}>
               <span style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:pct===100?"#47FFB8":phase?.color??"#E8FF47",letterSpacing:1}}>{done} / {TOTAL_SESSIONS}</span>
               {missedCount>0&&<span style={{fontFamily:"'Pirata One',cursive",fontSize:13,color:"#FF4747",letterSpacing:1}}>{missedCount} missed</span>}
@@ -1167,7 +1502,7 @@ function App(){
               const segW=(pt/TOTAL_SESSIONS)*100;
               const donePct=Math.min((pd/pt)*100,100);
               const missPct=Math.min((pm/pt)*100,100-donePct);
-              return(<div key={ph.label} style={{position:"absolute",top:0,bottom:0,left:`${off}%`,width:`${segW}%`,background:"#1c1c1c"}}>
+              return(<div key={ph.label} style={{position:"absolute",top:0,bottom:0,left:`${off}%`,width:`${segW}%`,background:"var(--card)"}}>
                 <div style={{position:"absolute",top:0,bottom:0,left:0,width:`${donePct}%`,background:ph.color,borderRadius:4,transition:"width 0.4s"}}/>
                 <div style={{position:"absolute",top:0,bottom:0,left:`${donePct}%`,width:`${missPct}%`,background:"#FF4747",opacity:0.75,transition:"width 0.4s"}}/>
               </div>);
@@ -1175,22 +1510,59 @@ function App(){
           </div>
           <div style={{display:"flex",justifyContent:"space-between",marginTop:6,flexWrap:"wrap",gap:4}}>
             <div style={{display:"flex",gap:10}}>
-              <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555"}}>{pct}% done</span>
+              <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)"}}>{pct}% done</span>
               {missedCount>0&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FF4747"}}>{missedPct}% missed</span>}
             </div>
-            {pct===100&&missedCount===0?<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#47FFB8"}}>🏁 PLAN COMPLETE</span>:<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333"}}>{TOTAL_SESSIONS-done-missedCount} remaining</span>}
+            {pct===100&&missedCount===0?<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#47FFB8"}}>🏁 PLAN COMPLETE</span>:<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--vdim)"}}>{TOTAL_SESSIONS-done-missedCount} remaining</span>}
           </div>
+
+          {/* Inline overview panel */}
+          {showOverview&&(
+            <div style={{marginTop:12,borderTop:`1px solid var(--border)`,paddingTop:12}} onClick={e=>e.stopPropagation()}>
+              {phases.map(ph=>(
+                <div key={ph.label} style={{marginBottom:12}}>
+                  <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:ph.color,marginBottom:6}}>{ph.label}</div>
+                  {ph.weeks.map(w=>{
+                    const dl=w===4||w===8,pk=w===12,d2=wkDone(w-1),m2=wkMissed(w-1),t=wkTotal(w-1),allD=d2===t&&t>0,hasMissed=m2>0;
+                    const wkStart=startDate?addDays(new Date(startDate),(w-1)*7):null;
+                    return(
+                      <button key={w} onClick={()=>{setWeek(w-1);setDayIdx(0);setView("day");setShowOverview(false);}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",marginBottom:4,background:"transparent",border:"none",cursor:"pointer",textAlign:"left",padding:"4px 0"}}>
+                        <div style={{width:3,height:28,borderRadius:2,background:allD?"#47FFB8":hasMissed?"#FF4747":w===wkNum?ph.color:"var(--border)",flexShrink:0}}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <span style={{fontFamily:"'Pirata One',cursive",fontSize:14,color:allD?"#47FFB8":hasMissed?"#FF8888":w===wkNum?"var(--text)":"#777",letterSpacing:0.5}}>
+                              Wk {w}{dl?" · Deload":pk?" · Test":""}{w===wkNum?" ◀":""}
+                            </span>
+                            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                              {wkLoadScore(w-1)>0&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FFB347"}}>⚡{wkLoadScore(w-1)}</span>}
+                              <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:allD?"#47FFB8":hasMissed?"#FF8888":"#444"}}>{d2}/{t}{m2>0?` · ${m2}✕`:""}</span>
+                            </div>
+                          </div>
+                          <div style={{height:2,background:"var(--border)",borderRadius:1,marginTop:3,overflow:"hidden",position:"relative"}}>
+                            <div style={{position:"absolute",top:0,bottom:0,left:0,width:`${t>0?(d2/t)*100:0}%`,background:allD?"#47FFB8":ph.color,transition:"width 0.3s"}}/>
+                            <div style={{position:"absolute",top:0,bottom:0,left:`${t>0?(d2/t)*100:0}%`,width:`${t>0?(m2/t)*100:0}%`,background:"#FF4747",opacity:0.7}}/>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         {(isDeload||isPeak)&&<div style={{marginTop:8,display:"inline-block",fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isPeak?"#FF6B47":"#47C8FF",border:`1px solid ${isPeak?"#FF6B4740":"#47C8FF40"}`,padding:"3px 9px",borderRadius:4}}>{isPeak?"🏁 TAPER + 5K TEST — TARGET SUB 23:00":"♻️ DELOAD — 30% VOLUME REDUCTION"}</div>}
       </div>
 
       {/* WEEK SELECTOR */}
-      <div style={{padding:"10px 20px 12px",borderBottom:"1px solid #1e1e1e"}}>
+      <div style={{padding:"10px 20px 12px",borderBottom:`1px solid var(--border)`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
           <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#444"}}>SELECT WEEK</div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>setShowInjury(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:Object.values(injuryFlags).some(Boolean)?"#FFB347":"#555",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>⚠️ INJURY</button>
-            <button onClick={exportWeek} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>↗ EXPORT</button>
+            <button onClick={()=>setShowInjury(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:Object.values(injuryFlags).some(Boolean)?"#FFB347":"var(--dim)",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>⚠️ INJURY</button>
+            <button onClick={exportWeek} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>↗ EXPORT</button>
+            <button onClick={()=>setShowShare(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#47C8FF",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>📸 SHARE</button>
+            <button onClick={()=>setShowReset(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FF4747",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>↺ RESET</button>
           </div>
         </div>
         <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
@@ -1198,29 +1570,29 @@ function App(){
             const w=i+1,isA=w===wkNum,dl=w===4||w===8,pk=w===12;
             const ph=phases.find(p=>p.weeks.includes(w));
             const d2=wkDone(i),m2=wkMissed(i),t=wkTotal(i),allActioned=(d2+m2)===t&&t>0,allD=d2===t&&t>0;
-            return(<button key={w} onClick={()=>{setWeek(i);setDayIdx(0);}} style={{width:36,height:36,borderRadius:6,border:"none",position:"relative",background:isA?(ph?.color??"#E8FF47"):allD?"#47FFB820":allActioned?"#FF474718":dl?"#47C8FF15":pk?"#FF6B4715":"#141414",color:isA?"#080808":allD?"#47FFB8":allActioned?"#FF8888":dl?"#47C8FF":pk?"#FF6B47":"#777",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:15,outline:isA?"none":allD?"1px solid #47FFB850":allActioned?"1px solid #FF474740":"1px solid #222",transition:"all 0.15s"}}>
+            return(<button key={w} onClick={()=>{setWeek(i);setDayIdx(0);}} style={{width:36,height:36,borderRadius:6,border:"none",position:"relative",background:isA?(ph?.color??"#E8FF47"):allD?"#47FFB820":allActioned?"#FF474718":dl?"#47C8FF15":pk?"#FF6B4715":"var(--card)",color:isA?"#080808":allD?"#47FFB8":allActioned?"#FF8888":dl?"#47C8FF":pk?"#FF6B47":"#777",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:15,outline:isA?"none":allD?"1px solid #47FFB850":allActioned?"1px solid #FF474740":"1px solid #222",transition:"all 0.15s"}}>
               {w}
               {allD&&!isA&&<div style={{position:"absolute",top:2,right:2,width:6,height:6,borderRadius:"50%",background:"#47FFB8"}}/>}
               {!allD&&m2>0&&!isA&&<div style={{position:"absolute",top:2,right:2,width:6,height:6,borderRadius:"50%",background:"#FF4747"}}/>}
             </button>);
           })}
         </div>
-        <div style={{marginTop:8,fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>
-          {phase?.desc}&nbsp;·&nbsp;<span style={{color:wkDone(week)===wkTotal(week)&&wkTotal(week)>0?"#47FFB8":wkMissed(week)>0?"#FF8888":"#555"}}>Week {wkNum}: {wkDone(week)}/{wkTotal(week)} done{wkMissed(week)>0?` · ${wkMissed(week)} missed`:""}</span>
+        <div style={{marginTop:8,fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>
+          {phase?.desc}&nbsp;·&nbsp;<span style={{color:wkDone(week)===wkTotal(week)&&wkTotal(week)>0?"#47FFB8":wkMissed(week)>0?"#FF8888":"var(--dim)"}}>Week {wkNum}: {wkDone(week)}/{wkTotal(week)} done{wkMissed(week)>0?` · ${wkMissed(week)} missed`:""}</span>
         </div>
       </div>
 
       {/* TABS */}
-      <div style={{display:"flex",borderBottom:"1px solid #1e1e1e",overflowX:"auto",scrollbarWidth:"none"}}>
+      <div style={{display:"flex",borderBottom:`1px solid var(--border)`}}>
         {tabs.map(([key,lbl])=>(
-          <button key={key} onClick={()=>setView(key)} style={{flex:"0 0 auto",padding:"10px 12px",background:"none",border:"none",borderBottom:view===key?`2px solid ${phase?.color??"#E8FF47"}`:"2px solid transparent",color:view===key?"#f0f0f0":"#666",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:1.5,whiteSpace:"nowrap",transition:"color 0.15s"}}>{lbl}</button>
+          <button key={key} onClick={()=>setView(key)} style={{flex:1,padding:"9px 0",background:"none",border:"none",borderBottom:view===key?`2px solid ${phase?.color??"#E8FF47"}`:"2px solid transparent",color:view===key?"var(--text)":"var(--dim)",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:0.5,transition:"color 0.15s",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lbl}</button>
         ))}
       </div>
 
-      {/* TRAINING TAB */}
-      {view==="training"&&(
+      {/* DAY TAB — sessions + nutrition combined */}
+      {view==="day"&&(
         <>
-          <div style={{display:"flex",overflowX:"auto",padding:"12px 20px 0",gap:6,scrollbarWidth:"none"}}>
+          <div style={{display:"flex",padding:"10px 12px 0",gap:4}}>
             {wkData.map((d,di)=>{
               const isA=di===dayIdx,main=T[d.sessions[0].type];
               const dd=d.sessions.filter((_,si)=>checked[sKey(week,di,si)]).length;
@@ -1229,12 +1601,12 @@ function App(){
               const anyMissed=dm>0&&!allD;
               const allActioned=(dd+dm)===d.sessions.length&&!allD;
               const pillDate=startDate?addDays(new Date(startDate),week*7+di):null;
-              return(<button key={d.day} onClick={()=>setDayIdx(di)} style={{flex:"0 0 auto",padding:"8px 11px",borderRadius:7,position:"relative",border:isA?`1px solid ${main.color}`:allD?"1px solid #47FFB850":anyMissed?"1px solid #FF474750":"1px solid #222",background:isA?`${main.color}18`:allD?"#47FFB812":anyMissed?"#FF474710":"#111",cursor:"pointer",transition:"all 0.15s"}}>
-                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isA?main.color:allD?"#47FFB8":anyMissed?"#FF8888":"#666"}}>{d.day}</div>
-                <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",marginTop:1,color:isA?"#ccc":allD?"#47FFB870":anyMissed?"#FF474780":"#333"}}>
-                  {allD?"✓ DONE":anyMissed?`${dm} MISSED`:pillDate?fmtDate(pillDate):d.sessions.map(s=>T[s.type].label).join("+")}
+              return(<button key={d.day} onClick={()=>setDayIdx(di)} style={{flex:1,padding:"7px 3px",borderRadius:7,position:"relative",border:isA?`1px solid ${main.color}`:allD?"1px solid #47FFB850":anyMissed?"1px solid #FF474750":"1px solid #222",background:isA?`${main.color}18`:allD?"#47FFB812":anyMissed?"#FF474710":"var(--bg2)",cursor:"pointer",transition:"all 0.15s",minWidth:0,overflow:"hidden"}}>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:0,color:isA?main.color:allD?"#47FFB8":anyMissed?"#FF8888":"#666",textAlign:"center"}}>{d.day}</div>
+                <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",marginTop:1,color:isA?"#ccc":allD?"#47FFB870":anyMissed?"#FF474780":"var(--vdim)",textAlign:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {allD?"✓":anyMissed?"✕":d.sessions.map(s=>T[s.type].icon).join("")}
                 </div>
-                {d.sessions.length>1&&!allD&&!anyMissed&&<div style={{position:"absolute",top:3,right:3,width:4,height:4,borderRadius:"50%",background:"#E8FF47"}}/>}
+                {d.sessions.length>1&&!allD&&!anyMissed&&<div style={{position:"absolute",top:2,right:2,width:3,height:3,borderRadius:"50%",background:"#E8FF47"}}/>}
               </button>);
             })}
           </div>
@@ -1243,56 +1615,35 @@ function App(){
               <div>
                 <div style={{fontFamily:"'Pirata One',cursive",fontSize:26,letterSpacing:2}}>{dayData.label}</div>
                 <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",letterSpacing:2}}>{dayData.theme.toUpperCase()}</div>
-                {dayDate&&<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333",marginTop:2}}>{fmtDate(dayDate)}</div>}
+                {dayDate&&<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--vdim)",marginTop:2}}>{fmtDate(dayDate)}</div>}
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 {dayData.sessions.length>1&&dayData.sessions.some(s=>s.type!=="rest")&&<span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#E8FF47",border:"1px solid #E8FF4740",padding:"3px 7px",borderRadius:3}}>DOUBLE DAY</span>}
-                <span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#2a2a2a",letterSpacing:1}}>← swipe →</span>
+                <button onClick={()=>setShowSwap(true)} style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#47C8FF",background:"none",border:"1px solid #47C8FF30",borderRadius:4,padding:"3px 7px",cursor:"pointer",letterSpacing:1}}>⇄ SWAP</button>
+                <span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"var(--border)",letterSpacing:1}}>← swipe →</span>
               </div>
             </div>
-            {dayData.sessions.some(s=>s.type==="run")&&(
-              <MobilityPanel type="preRun" title="PRE-RUN" color="#E8FF47"/>
-            )}
-            {dayData.sessions.map((s,si)=>(
-              <SessionCard key={si} s={s} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed} injuryFlags={injuryFlags}
+            {dayData.sessions.map((s,si)=>{
+              const dynamicS={...s,details:applyPacesToDetails(s.details,PACES_COMPUTED)};
+              return(
+              <SessionCard key={si} s={dynamicS} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed} injuryFlags={injuryFlags} paces={PACES_COMPUTED}
                 onLog={()=>setLogModal({session:s,key:`log-${week}-${dayIdx}-${si}`})} logData={sessionLogs[`log-${week}-${dayIdx}-${si}`]}/>
-            ))}
+              );
+            })}
 
             {/* Week notes */}
-            <div style={{background:"#141414",borderRadius:8,padding:"12px 14px",marginBottom:20,border:"1px solid #1e1e1e"}}>
+            <div style={{background:"var(--card)",borderRadius:8,padding:"12px 14px",marginBottom:16,border:`1px solid var(--border)`}}>
               <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#444",marginBottom:6}}>WEEK {wkNum} NOTES</div>
-              <textarea rows={2} placeholder="How's the week going? Any observations..." value={weekNotes[week]||""} onChange={e=>setWeekNotes(p=>({...p,[week]:e.target.value}))} style={{resize:"none",background:"transparent",border:"none",padding:0,color:"#888",fontSize:12,width:"100%",outline:"none",fontFamily:"'DM Mono',monospace"}}/>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* NUTRITION TAB */}
-      {view==="nutrition"&&(
-        <>
-          {/* Day selector */}
-          <div style={{display:"flex",overflowX:"auto",padding:"12px 20px 0",gap:6,scrollbarWidth:"none"}}>
-            {wkData.map((d,di)=>{const isA=di===dayIdx,main=T[d.sessions[0].type];return(
-              <button key={d.day} onClick={()=>setDayIdx(di)} style={{flex:"0 0 auto",padding:"8px 11px",borderRadius:7,border:isA?`1px solid ${main.color}`:"1px solid #222",background:isA?`${main.color}18`:"#111",cursor:"pointer"}}>
-                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isA?main.color:"#666"}}>{d.day}</div>
-              </button>
-            );})}
-          </div>
-          <div style={{padding:"14px 20px 0"}}>
-            <div style={{fontFamily:"'Pirata One',cursive",fontSize:24,letterSpacing:2,marginBottom:2}}>{dayData.label} — Fuel Plan</div>
-            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555",letterSpacing:2,marginBottom:12}}>{dayData.theme.toUpperCase()} · WEEK {wkNum}</div>
-
-            {/* Session summary chips */}
-            <div style={{display:"flex",gap:5,marginBottom:14,flexWrap:"wrap"}}>
-              {dayData.sessions.map((s,i)=>{const cfg=T[s.type];return(
-                <div key={i} style={{background:`${cfg.color}10`,border:`1px solid ${cfg.color}22`,borderRadius:6,padding:"5px 10px"}}>
-                  <div style={{fontSize:8,color:cfg.color,fontFamily:"'DM Mono',monospace",letterSpacing:1}}>{s.slot} {s.time!=="-"?s.time:""}</div>
-                  <div style={{fontSize:11,color:"#ccc",fontFamily:"'Pirata One',cursive",letterSpacing:1}}>{s.title}</div>
-                </div>
-              );})}
+              <textarea rows={2} placeholder="How's the week going? Any observations..." value={weekNotes[week]||""} onChange={e=>setWeekNotes(p=>({...p,[week]:e.target.value}))} style={{resize:"none",background:"transparent",border:"none",padding:0,color:"var(--muted)",fontSize:12,width:"100%",outline:"none",fontFamily:"'DM Mono',monospace"}}/>
             </div>
 
-            {/* Macros targets */}
+            {/* ── NUTRITION (inline below sessions) ── */}
+            <div style={{borderTop:`1px solid var(--border)`,paddingTop:16,marginBottom:4}}>
+              <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,marginBottom:2}}>Fuel Plan</div>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:2,marginBottom:12}}>{dayData.theme.toUpperCase()} · WEEK {wkNum}</div>
+            </div>
+
+            {/* Macros */}
             {(()=>{
               const isDouble=dayData.sessions.length>1&&dayData.sessions[0].type!=="rest";
               const isLong=dayData.sessions.some(s=>s.title&&s.title.includes("Long"));
@@ -1300,43 +1651,48 @@ function App(){
               const kcal=isDeload?2400:isRest?2000:isDouble?3000:isLong?2800:2600;
               const prot=Math.round(76*1.8);
               const carb=isDeload?260:isRest?180:isDouble?380:isLong?340:300;
-              const fat=isRest?80:75;
-              const water=isRest?2.5:isDouble?3.5:isLong?3.5:3.0;
+              const water=isRest?2.5:isDouble?3.5:3.0;
               const macros=[
                 {label:"PROTEIN",val:prot+"g",target:"1.8g/kg",color:"#47C8FF",pct:100},
-                {label:"CARBS",val:carb+"g",target:isDouble?"High day":isLong?"High day":isRest?"Low day":"Moderate",color:"#E8FF47",pct:isRest?50:isDouble?100:75},
-                {label:"FAT",val:fat+"g",target:"~75g",color:"#FF8C47",pct:fat/90*100},
-                {label:"CALORIES",val:kcal+"kcal",target:"~target",color:"#47FFB8",pct:Math.min((kcal/3200)*100,100)},
+                {label:"CARBS",val:carb+"g",target:isDouble?"High day":isRest?"Low day":"Moderate",color:"#E8FF47",pct:isRest?50:isDouble?100:75},
+                {label:"FAT",val:"75g",target:"~75g",color:"#FF8C47",pct:83},
+                {label:"KCAL",val:kcal+"",target:"~target",color:"#47FFB8",pct:Math.min((kcal/3200)*100,100)},
               ];
               return(
-                <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
-                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:phase?.color??"#E8FF47",marginBottom:10}}>DAILY TARGETS</div>
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+                <div style={{background:"var(--card)",borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
                     {macros.map(m=>(
-                      <div key={m.label} style={{flex:"1 0 auto",minWidth:70,background:`${m.color}08`,border:`1px solid ${m.color}20`,borderRadius:8,padding:"8px 10px"}}>
-                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#555",letterSpacing:1,marginBottom:3}}>{m.label}</div>
-                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:m.color,lineHeight:1}}>{m.val}</div>
-                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:2}}>{m.target}</div>
-                        <div style={{height:3,background:"#222",borderRadius:2,marginTop:6}}>
-                          <div style={{height:"100%",width:`${Math.min(m.pct,100)}%`,background:m.color,borderRadius:2}}/>
-                        </div>
+                      <div key={m.label} style={{flex:"1 0 auto",minWidth:64,background:`${m.color}08`,border:`1px solid ${m.color}20`,borderRadius:8,padding:"7px 9px"}}>
+                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:1,marginBottom:2}}>{m.label}</div>
+                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:17,color:m.color,lineHeight:1}}>{m.val}</div>
+                        <div style={{height:2,background:"#222",borderRadius:2,marginTop:5}}><div style={{height:"100%",width:`${Math.min(m.pct,100)}%`,background:m.color,borderRadius:2}}/></div>
                       </div>
                     ))}
                   </div>
-                  {/* Hydration */}
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderTop:"1px solid #1e1e1e"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:8,borderTop:`1px solid var(--border)`}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:14}}>💧</span>
-                      <div>
-                        <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555",letterSpacing:2}}>HYDRATION TARGET</div>
-                        <div style={{fontSize:11,fontFamily:"'DM Mono',monospace",color:"#888"}}>{isDouble?"Add 500ml per session on top":"Sip consistently — don't front-load"}</div>
-                      </div>
+                      <span style={{fontSize:13}}>💧</span>
+                      <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"var(--dim)"}}>{isDouble?"Add 500ml per session":"Sip consistently"}</span>
                     </div>
-                    <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:"#47C8FF"}}>{water}L</div>
+                    <span style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:"#47C8FF"}}>{water}L</span>
                   </div>
                 </div>
               );
             })()}
+
+            {/* Meal timing */}
+            <div style={{background:"var(--card)",borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47FFB8",marginBottom:10}}>MEAL TIMING</div>
+              {dayData.nutrition.map((n,i)=>(
+                <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"7px 0",borderBottom:i<dayData.nutrition.length-1?"1px solid #1e1e1e":"none"}}>
+                  <div style={{minWidth:44}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:n.color}}>{n.time}</div></div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#444",marginBottom:1}}>{n.label.toUpperCase()}</div>
+                    <div style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{n.food}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Supplements */}
             {(()=>{
@@ -1344,23 +1700,22 @@ function App(){
               const hasGym=dayData.sessions.some(s=>s.type==="gym");
               const isRest=dayData.sessions.every(s=>s.type==="rest");
               const supps=[];
-              if(!isRest) supps.push({time:"Morning",name:"Creatine",dose:"5g",note:"With breakfast — consistency matters more than timing",color:"#47C8FF"});
-              if(hasRun||hasGym) supps.push({time:"30 min pre",name:"Caffeine",dose:"1-2 cups coffee",note:"~3mg/kg. Cut off by 14:00 to protect sleep",color:"#E8FF47"});
-              if(dayData.sessions.length>1) supps.push({time:"Between sessions",name:"Electrolytes",dose:"500ml + pinch salt",note:"Sodium, potassium — especially in summer",color:"#FF8C47"});
-              if(hasRun&&(dayData.sessions[0].duration||"").includes("50")||dayData.sessions[0].type==="run"&&parseInt(dayData.sessions[0].duration)>=50) supps.push({time:"During run",name:"Carb fuel",dose:"Date or gel if >45 min",note:"Simple carbs every 45 min on intervals or long efforts",color:"#47FFB8"});
-              if(supps.length===0) return null;
+              if(!isRest)supps.push({time:"Morning",name:"Creatine",dose:"5g",note:"With breakfast — consistency > timing",color:"#47C8FF"});
+              if(hasRun||hasGym)supps.push({time:"30 min pre",name:"Caffeine",dose:"1-2 coffees",note:"~3mg/kg. Cut off by 14:00 to protect sleep",color:"#E8FF47"});
+              if(dayData.sessions.length>1&&dayData.sessions[0].type!=="rest")supps.push({time:"Between sessions",name:"Electrolytes",dose:"500ml + pinch salt",note:"Sodium + potassium — especially in summer",color:"#FF8C47"});
+              if(!supps.length)return null;
               return(
-                <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
-                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47C8FF",marginBottom:10}}>SUPPLEMENTS & TIMING</div>
+                <div style={{background:"var(--card)",borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47C8FF",marginBottom:8}}>SUPPLEMENTS</div>
                   {supps.map((s,i)=>(
-                    <div key={i} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:i<supps.length-1?"1px solid #1e1e1e":"none"}}>
-                      <div style={{minWidth:70}}>
-                        <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:s.color,letterSpacing:1}}>{s.time.toUpperCase()}</div>
-                        <div style={{fontSize:11,fontFamily:"'Pirata One',cursive",color:s.color,letterSpacing:1}}>{s.dose}</div>
+                    <div key={i} style={{display:"flex",gap:12,padding:"7px 0",borderBottom:i<supps.length-1?"1px solid #1e1e1e":"none"}}>
+                      <div style={{minWidth:68}}>
+                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:s.color,letterSpacing:1}}>{s.time.toUpperCase()}</div>
+                        <div style={{fontSize:11,fontFamily:"'Pirata One',cursive",color:s.color}}>{s.dose}</div>
                       </div>
                       <div style={{flex:1}}>
                         <div style={{fontSize:11,color:"#ccc",fontFamily:"'Barlow',sans-serif",fontWeight:500}}>{s.name}</div>
-                        <div style={{fontSize:10,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{s.note}</div>
+                        <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.4}}>{s.note}</div>
                       </div>
                     </div>
                   ))}
@@ -1368,55 +1723,11 @@ function App(){
               );
             })()}
 
-            {/* Meal timeline */}
-            <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47FFB8",marginBottom:10}}>MEAL TIMING</div>
-              {dayData.nutrition.map((n,i)=>(
-                <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"8px 0",borderBottom:i<dayData.nutrition.length-1?"1px solid #1e1e1e":"none"}}>
-                  <div style={{minWidth:46}}>
-                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:n.color}}>{n.time}</div>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#444",marginBottom:2}}>{n.label.toUpperCase()}</div>
-                    <div style={{fontSize:12,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{n.food}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Meal prep tip */}
-            <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#FF8C47",marginBottom:8}}>MEAL PREP</div>
-              {[
-                {day:0,tip:"Sunday batch: cook 200g rice, boil 6 eggs, prep overnight oats for Mon-Tue mornings"},
-                {day:1,tip:"Today: portion chicken thighs for Tue-Wed. Hard boil eggs if running low."},
-                {day:2,tip:"Wed eve: make a big lentil soup batch — covers Thu lunch and Fri lunch too"},
-                {day:3,tip:"Thu: defrost any frozen protein for Fri. Check you have bananas for tomorrow's pre-run fuel"},
-                {day:4,tip:"Fri eve: overnight oats + banana ready for Saturday long run morning"},
-                {day:5,tip:"After long run: cook extra rice and sweet potato — this fuels your recovery for 24hrs"},
-                {day:6,tip:"Today: plan and prep for the week ahead. Batch cook rice, portion proteins, get oat milk in"},
-              ][dayIdx]&&<div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>
-                {[
-                  "Sunday batch: cook 200g rice, boil 6 eggs, prep overnight oats for Mon-Tue mornings",
-                  "Today: portion chicken thighs for Tue-Wed. Hard boil eggs if running low.",
-                  "Wed eve: make a big lentil soup batch — covers Thu lunch and Fri lunch too",
-                  "Thu: defrost any frozen protein for Fri. Check you have bananas for tomorrow's pre-run fuel",
-                  "Fri eve: overnight oats + banana ready for Saturday long run morning",
-                  "After long run: cook extra rice and sweet potato — fuels your recovery for 24hrs",
-                  "Today: plan and prep for the week ahead. Batch cook rice, portion proteins, get oat milk in",
-                ][dayIdx]}
-              </div>}
-            </div>
-
-            {/* Phase fuel note */}
-            <div style={{padding:"12px 14px",background:`${phase?.color??"#E8FF47"}08`,border:`1px solid ${phase?.color??"#E8FF47"}20`,borderRadius:10,marginBottom:16}}>
-              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:phase?.color??"#E8FF47",marginBottom:5}}>WEEK {wkNum} FUEL NOTE</div>
-              <div style={{fontSize:11,color:"#555",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>
-                {isDeload?"Deload week — reduce carbs 15-20%. Keep protein at 1.8g/kg body weight. Prioritise sleep over everything."
-                :isPeak?"Taper week — carb load Thu-Sat evenings (rice, pasta, sweet potato). Big breakfast before 5K. No new foods on test day."
-                :wkNum<=3?"Foundation — consistent eating over perfection. Hit your protein daily. Carbs around every session."
-                :wkNum<=7?"Development — add 300-400 kcal on double days. Carb load the night before hard sessions."
-                :"Sharpening — precision now matters. Time carbs tightly. Electrolytes on doubles. Nothing heavy within 2hrs of training."}
+            {/* Fuel note */}
+            <div style={{padding:"10px 14px",background:`${phase?.color??"#E8FF47"}08`,border:`1px solid ${phase?.color??"#E8FF47"}20`,borderRadius:10,marginBottom:20}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:phase?.color??"#E8FF47",marginBottom:4}}>FUEL NOTE</div>
+              <div style={{fontSize:11,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>
+                {isDeload?"Deload — reduce carbs 15-20%. Keep protein at 1.8g/kg. Sleep is the priority.":isPeak?"Taper — carb load Thu-Sat. Big breakfast before 5K. No new foods on test day.":wkNum<=3?"Foundation — consistent eating. Hit protein daily. Carbs around every session.":wkNum<=7?"Development — add 300-400 kcal on double days. Carb load night before hard sessions.":"Sharpening — precision matters. Time carbs tightly. Electrolytes on doubles."}
               </div>
             </div>
           </div>
@@ -1424,83 +1735,74 @@ function App(){
       )}
 
 
-      {/* PACES TAB */}
-      {view==="paces"&&(
+
+            {view==="paces"&&(
         <div style={{padding:"16px 20px 0"}}>
-          <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>Your Training Paces</div>
-          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",letterSpacing:2,marginBottom:14}}>BASED ON HM PB 1:43:00 · EASY PACE 6:00/KM</div>
-          <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-            {[{label:"HM PB",value:"1:43:00",sub:"4:53/km",color:"#FFB347"},{label:"5K Equiv",value:"~22:45",sub:"4:33/km",color:"#FF6B47"},{label:"10K Equiv",value:"~47:30",sub:"4:45/km",color:"#FF8C47"}].map(s=>(
-              <div key={s.label} style={{flex:"1 0 auto",background:`${s.color}15`,border:`1px solid ${s.color}35`,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:s.color,letterSpacing:1}}>{s.value}</div>
-                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#666",letterSpacing:1}}>{s.label}</div>
-                <div style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"#777",marginTop:2}}>{s.sub}</div>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>Training Paces</div>
+          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:2,marginBottom:16}}>DRAG SLIDER TO ADJUST YOUR EASY PACE — ALL ZONES RECALCULATE</div>
+
+          {/* Easy pace slider */}
+          <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"var(--muted)"}}>Easy Pace</span>
+              <span style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:"#47FFB8"}}>
+                {Math.floor(easyPaceSecs/60)}:{String(easyPaceSecs%60).padStart(2,"0")}/km
+              </span>
+            </div>
+            <input type="range" min={300} max={480} step={5} value={easyPaceSecs}
+              onChange={e=>setEasyPaceSecs(Number(e.target.value))}/>
+            <style>{"input[type=range]::-webkit-slider-thumb{background:#47FFB8}input[type=range]::-moz-range-thumb{background:#47FFB8}"}</style>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+              <span style={{fontSize:9,color:"#444",fontFamily:"'DM Mono',monospace"}}>5:00/km</span>
+              <span style={{fontSize:9,color:"#444",fontFamily:"'DM Mono',monospace"}}>8:00/km</span>
+            </div>
+            <div style={{marginTop:10,padding:"8px 12px",background:"#47FFB810",border:"1px solid #47FFB820",borderRadius:6}}>
+              <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.6}}>
+                Easy pace drives every zone. Adjust to match your current fitness — all session targets update instantly.
               </div>
-            ))}
+            </div>
           </div>
-          <div style={{background:"#141414",borderRadius:10,overflow:"hidden",marginBottom:16}}>
-            {Object.entries(PACES).map(([key,p],i,arr)=>(
+
+          {/* All zones */}
+          <div style={{background:"var(--card)",borderRadius:10,overflow:"hidden",marginBottom:16}}>
+            {Object.entries(PACES_COMPUTED).map(([key,p],i,arr)=>(
               <div key={key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 14px",borderBottom:i<arr.length-1?"1px solid #1e1e1e":"none"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:8,height:8,borderRadius:"50%",background:p.color}}/>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:p.color,flexShrink:0}}/>
                   <span style={{fontSize:12,color:"#ccc",fontFamily:"'Barlow',sans-serif"}}>{p.label}</span>
                 </div>
-                <span style={{fontSize:13,fontFamily:"'DM Mono',monospace",color:p.color,letterSpacing:0.5}}>{p.pace}</span>
+                <span style={{fontSize:12,fontFamily:"'DM Mono',monospace",color:p.color,letterSpacing:0.5}}>{p.pace}</span>
               </div>
             ))}
           </div>
-          <div style={{background:"#141414",borderRadius:10,padding:"14px",marginBottom:16}}>
-            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#E8FF47",marginBottom:10}}>PACE PROGRESSION TARGETS</div>
-            {[{phase:"Phase 1 (Wk 1–3)",reps:"4:25–4:30/km",tempo:"5:05–5:15/km",oneK:"4:45/km",color:"#E8FF47"},{phase:"Phase 2 (Wk 5–7)",reps:"4:22–4:27/km",tempo:"5:05–5:10/km",oneK:"4:42/km",color:"#47C8FF"},{phase:"Phase 3 (Wk 9–11)",reps:"4:18–4:23/km",tempo:"5:00–5:05/km",oneK:"4:38/km",color:"#FF6B47"},{phase:"Week 12 Target",reps:"5K all out",tempo:"Sub 23:00",oneK:"4:33–4:38/km",color:"#FFB347"}].map((row,i)=>(
-              <div key={i} style={{padding:"8px 0",borderBottom:i<3?"1px solid #1e1e1e":"none"}}>
-                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:row.color,marginBottom:5}}>{row.phase.toUpperCase()}</div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {[["400m",row.reps],["Tempo",row.tempo],["1K",row.oneK]].map(([lbl,val])=>(
-                    <span key={lbl} style={{fontSize:10,fontFamily:"'DM Mono',monospace",background:`${row.color}15`,border:`1px solid ${row.color}35`,borderRadius:4,padding:"2px 8px",color:row.color}}>{lbl}: {val}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{padding:"12px 14px",background:"#E8FF4710",border:"1px solid #E8FF4725",borderRadius:10,marginBottom:16}}>
-            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#E8FF47",marginBottom:6}}>HOW TO USE</div>
-            <div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.8}}>Easy pace is non-negotiable — 6:00/km means 6:00/km. Running easy days faster kills quality sessions. Speed targets are ceilings not floors — aim to negative-split every rep set.</div>
-          </div>
-        </div>
-      )}
 
-      {/* OVERVIEW TAB */}
-      {view==="overview"&&(
-        <div style={{padding:"16px 20px 0"}}>
-          <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:14}}>12-Week Map</div>
-          {phases.map(ph=>(
-            <div key={ph.label} style={{marginBottom:18}}>
-              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:ph.color,marginBottom:8}}>{ph.label}</div>
-              <div style={{fontSize:10,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginBottom:8}}>{ph.desc}</div>
-              {ph.weeks.map(w=>{
-                const dl=w===4||w===8,pk=w===12,d2=wkDone(w-1),m2=wkMissed(w-1),t=wkTotal(w-1),allD=d2===t&&t>0,hasMissed=m2>0;
-                const wkStartDate=startDate?addDays(new Date(startDate),(w-1)*7):null;
-                const note=weekNotes[w-1];
-                return(<button key={w} onClick={()=>{setWeek(w-1);setDayIdx(0);setView("training");}} style={{display:"block",width:"100%",marginBottom:5,background:dl?"#47C8FF0a":pk?"#FF6B470a":"#111",border:`1px solid ${allD?"#47FFB840":hasMissed?"#FF474730":dl?"#47C8FF25":pk?"#FF6B4725":"#1e1e1e"}`,borderLeft:`3px solid ${allD?"#47FFB8":hasMissed?"#FF4747":dl?"#47C8FF":pk?"#FF6B47":ph.color}`,borderRadius:8,padding:"10px 14px",cursor:"pointer",textAlign:"left"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div>
-                      <div style={{fontFamily:"'Pirata One',cursive",fontSize:17,color:allD?"#47FFB8":hasMissed?"#FF8888":"#e0e0e0",letterSpacing:1}}>Week {w} {dl?"— DELOAD":pk?"— PEAK & TEST":""} {allD?"✓":""}</div>
-                      {wkStartDate&&<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333",marginTop:1}}>{fmtDate(wkStartDate)}</div>}
-                    </div>
-                    <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:allD?"#47FFB8":hasMissed?"#FF8888":"#555"}}>{d2}/{t}{m2>0?` · ${m2}✕`:""}</div>
+          {/* Phase progression */}
+          <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#E8FF47",marginBottom:10}}>PACE PROGRESSION BY PHASE</div>
+            {[
+              {phase:"Phase 1 (Wk 1-3)",color:"#E8FF47",adj:{reps:0,tempo:0,oneK:0}},
+              {phase:"Phase 2 (Wk 5-7)",color:"#47C8FF",adj:{reps:-3,tempo:-5,oneK:-3}},
+              {phase:"Phase 3 (Wk 9-11)",color:"#FF6B47",adj:{reps:-7,tempo:-10,oneK:-7}},
+              {phase:"Week 12 Target",color:"#FFB347",adj:{reps:-12,tempo:-15,oneK:-12}},
+            ].map((row,i)=>{
+              const repSecs=paceToSecs(PACES_COMPUTED.reps400.pace.split("–")[0])||265;
+              const tempoSecs=paceToSecs(PACES_COMPUTED.tempo.pace.split("–")[0])||305;
+              const onekSecs=paceToSecs(PACES_COMPUTED.fiveK.pace.split("–")[0])||273;
+              const fmt2=s=>{const v=s+row.adj.reps;return`${Math.floor(v/60)}:${String(v%60).padStart(2,"0")}/km`;};
+              return(
+                <div key={i} style={{padding:"8px 0",borderBottom:i<3?"1px solid #1e1e1e":"none"}}>
+                  <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:row.color,marginBottom:5}}>{row.phase.toUpperCase()}</div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {[["400m",repSecs+row.adj.reps],["Tempo",tempoSecs+row.adj.tempo],["1K",onekSecs+row.adj.oneK]].map(([lbl,s])=>(
+                      <span key={lbl} style={{fontSize:10,fontFamily:"'DM Mono',monospace",background:`${row.color}12`,border:`1px solid ${row.color}30`,borderRadius:4,padding:"2px 8px",color:row.color}}>
+                        {lbl}: {Math.floor(s/60)}:{String(s%60).padStart(2,"0")}/km
+                      </span>
+                    ))}
                   </div>
-                  <div style={{height:3,background:"#1e1e1e",borderRadius:2,marginTop:6,overflow:"hidden",position:"relative"}}>
-                    <div style={{position:"absolute",top:0,bottom:0,left:0,width:`${t>0?(d2/t)*100:0}%`,background:allD?"#47FFB8":ph.color,borderRadius:2,transition:"width 0.3s"}}/>
-                    <div style={{position:"absolute",top:0,bottom:0,left:`${t>0?(d2/t)*100:0}%`,width:`${t>0?(m2/t)*100:0}%`,background:"#FF4747",opacity:0.7,transition:"width 0.3s"}}/>
-                  </div>
-                  {note?<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:5,lineHeight:1.4,fontStyle:"italic"}}>"{note.slice(0,70)}{note.length>70?"...":""}"</div>
-                  :<div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#333",marginTop:5}}>
-                    {dl?"Volume -30% · Easy paces · Full recovery":pk?"Taper · Tune-up Fri · Shakeout Sat · 5K Sun":w<=3?"400m @ 4:25-4:30 · Tempo 5:05-5:15 · Long 75 min":w<=7?"400m @ 4:22-4:27 · Tempo 5:05-5:10 · Long 90 min":"400m @ 4:18-4:23 · Tempo 5:00-5:05 · Long 100 min"}
-                  </div>}
-                </button>);
-              })}
-            </div>
-          ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
