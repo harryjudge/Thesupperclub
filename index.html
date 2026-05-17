@@ -681,7 +681,7 @@ function CooldownPanel({type,color}){
 
 // ── SESSION CARD (collapsible + injury aware) ────────────────────
 function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logData,injuryFlags,paces}){
-  const[collapsed,setCollapsed]=useState(false);
+  const[collapsed,setCollapsed]=useState(true);
   const[tickAnim,setTickAnim]=useState(false);
   const cfg=T[s.type];
   const cardBg=checked?"#0a140a":isMissed?"#1a0a0a":"var(--card)";
@@ -764,6 +764,107 @@ function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logDat
           <button onClick={e=>{e.stopPropagation();onLog();}} style={{marginLeft:"auto",fontSize:9,color:"#444",background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Mono',monospace"}}>edit</button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── ADD SESSION MODAL ─────────────────────────────────────────────
+const SESSION_TEMPLATES=[
+  {type:"run",   title:"Easy Run",         slot:"AM",time:"06:30",duration:"30 min",rpe:4,paceKeys:["easy"],     details:["Fully easy @ easy pace","Focus on form and breathing","No watch pressure today"],cooldown:"easy",  mobility:"postRun",preRun:true},
+  {type:"run",   title:"Tempo Run",        slot:"AM",time:"06:30",duration:"40 min",rpe:7,paceKeys:["tempo"],    details:["10 min easy warm-up","20 min @ tempo pace","10 min easy cool-down"],cooldown:"tempo",mobility:"postRun",preRun:true},
+  {type:"run",   title:"Easy Strides",     slot:"AM",time:"06:30",duration:"25 min",rpe:4,paceKeys:["easy"],     details:["15 min easy jog","6×20s strides at 5K effort","Full recovery between each"],cooldown:"easy",mobility:"postRun",preRun:true},
+  {type:"gym",   title:"Core & Mobility",  slot:"PM",time:"19:00",duration:"30 min",rpe:3,paceKeys:[],           details:["Dead bug 3×10","Pallof press 3×12","Copenhagen plank 3×20s each","Hollow body hold 3×30s","10 min foam roll"],cooldown:"gym",mobility:"postGym",preRun:false,gymExercises:[]},
+  {type:"gym",   title:"Upper Body",       slot:"PM",time:"19:00",duration:"45 min",rpe:6,paceKeys:[],           details:["Pull-up 4×5","Single-arm DB row 3×10","Landmine press 3×8","Pallof press 3×12","Hollow body hold 3×30s"],cooldown:"gym",mobility:"postGym",preRun:false,gymExercises:["Pull-up","Single-arm DB row","Landmine press"]},
+  {type:"gym",   title:"Lower Body",       slot:"PM",time:"19:00",duration:"45 min",rpe:6,paceKeys:[],           details:["Trap bar deadlift 4×4","Bulgarian split squat 3×8","Nordic curl 3×6","Copenhagen plank 3×20s","Farmer carry 3×30m"],cooldown:"gym",mobility:"postGym",preRun:false,gymExercises:["Trap bar deadlift","Bulgarian split squat","Nordic curl"]},
+  {type:"swim",  title:"Easy Swim",        slot:"PM",time:"19:00",duration:"30 min",rpe:3,paceKeys:[],           details:["800m easy mixed stroke","Focus on breathing rhythm","10 min poolside mobility"],cooldown:"swim",mobility:null,preRun:false},
+  {type:"cycle", title:"Easy Spin",        slot:"AM",time:"06:30",duration:"45 min",rpe:3,paceKeys:[],           details:["Zone 2 only — 60-70% max HR","Cadence 85-90 rpm","No targets — active recovery"],cooldown:"easy",mobility:null,preRun:false},
+  {type:"rest",  title:"Active Recovery",  slot:"-", time:"-",   duration:"-",     rpe:1,paceKeys:[],           details:["Light walk 20-30 min","Foam roll quads, calves, glutes","10 min sauna if available"],cooldown:null,mobility:null,preRun:false},
+];
+
+function AddSessionModal({onSave,onClose}){
+  const[selected,setSelected]=useState(null);
+  const[customTitle,setCustomTitle]=useState("");
+  const[customTime,setCustomTime]=useState("18:00");
+  const[customSlot,setCustomSlot]=useState("PM");
+  const[customDuration,setCustomDuration]=useState("45 min");
+  const[customNotes,setCustomNotes]=useState("");
+
+  const handleSave=()=>{
+    if(selected===null)return;
+    const tmpl=SESSION_TEMPLATES[selected];
+    const session={
+      ...tmpl,
+      title:customTitle||tmpl.title,
+      time:customTime,
+      slot:customSlot,
+      duration:customDuration,
+      details:[...tmpl.details,...(customNotes?[customNotes]:[])],
+      isCustom:true,
+    };
+    onSave(session);
+  };
+
+  const cfg=selected!==null?T[SESSION_TEMPLATES[selected].type]:null;
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
+      <div style={{width:"100%",background:"var(--bg2)",borderRadius:"16px 16px 0 0",padding:24,maxHeight:"88vh",overflowY:"auto",animation:"slideIn 0.2s ease"}}>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,letterSpacing:2,marginBottom:4}}>Add Session</div>
+        <div style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>SELECT A SESSION TYPE</div>
+
+        {/* Template picker */}
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+          {SESSION_TEMPLATES.map((t,i)=>{
+            const c=T[t.type];
+            return(
+              <button key={i} onClick={()=>{setSelected(i);setCustomTitle(t.title);setCustomTime(t.time);setCustomSlot(t.slot);setCustomDuration(t.duration);}} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,border:`1px solid ${selected===i?c.color:"var(--border)"}`,background:selected===i?`${c.color}15`:"var(--card)",cursor:"pointer",textAlign:"left"}}>
+                <span style={{fontSize:18}}>{c.icon}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"'Pirata One',cursive",fontSize:15,color:selected===i?c.color:"var(--text)",letterSpacing:1}}>{t.title}</div>
+                  <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>{t.duration} · RPE {t.rpe}</div>
+                </div>
+                {selected===i&&<span style={{color:c.color}}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Customise */}
+        {selected!==null&&(
+          <div style={{borderTop:`1px solid var(--border)`,paddingTop:16,marginBottom:16}}>
+            <div style={{fontSize:9,color:cfg?.color,fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:12}}>CUSTOMISE</div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginBottom:4}}>TITLE</div>
+              <input type="text" value={customTitle} onChange={e=>setCustomTitle(e.target.value)} style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,color:"var(--text)",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",width:"100%",outline:"none"}}/>
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:10}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginBottom:4}}>SLOT</div>
+                <select value={customSlot} onChange={e=>setCustomSlot(e.target.value)} style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,color:"var(--text)",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",width:"100%",outline:"none"}}>
+                  <option>AM</option><option>PM</option><option>—</option>
+                </select>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginBottom:4}}>TIME</div>
+                <input type="text" value={customTime} onChange={e=>setCustomTime(e.target.value)} placeholder="e.g. 07:00" style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,color:"var(--text)",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",width:"100%",outline:"none"}}/>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginBottom:4}}>DURATION</div>
+                <input type="text" value={customDuration} onChange={e=>setCustomDuration(e.target.value)} placeholder="e.g. 45 min" style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,color:"var(--text)",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",width:"100%",outline:"none"}}/>
+              </div>
+            </div>
+            <div>
+              <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginBottom:4}}>EXTRA NOTE (optional)</div>
+              <textarea rows={2} value={customNotes} onChange={e=>setCustomNotes(e.target.value)} placeholder="Any specific focus or modification..." style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,color:"var(--text)",fontFamily:"'DM Mono',monospace",fontSize:12,padding:"8px 10px",width:"100%",outline:"none",resize:"none"}}/>
+            </div>
+          </div>
+        )}
+
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"var(--card)",border:`1px solid var(--border)`,borderRadius:8,color:"var(--dim)",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>CANCEL</button>
+          <button disabled={selected===null} onClick={handleSave} style={{flex:2,padding:"12px 0",background:cfg?`${cfg.color}20`:"var(--card)",border:`1px solid ${cfg?cfg.color+"50":"var(--border)"}`,borderRadius:8,color:cfg?cfg.color:"var(--dim)",cursor:selected!==null?"pointer":"default",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>ADD TO DAY</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1208,6 +1309,8 @@ function App(){
   const[showOverview,setShowOverview]=useState(false);
   const[showSwap,setShowSwap]=useState(false);
   const[showShare,setShowShare]=useState(false);
+  const[showAddSession,setShowAddSession]=useState(false);
+  const[customSessions,setCustomSessions]=useState(()=>{try{const s=localStorage.getItem("sc_custom");return s?JSON.parse(s):{}}catch{return{}}});
   const[swaps,setSwaps]=useState(()=>{try{const s=localStorage.getItem("sc_swaps");return s?JSON.parse(s):{}}catch{return{}}});
   const[toast,setToast]=useState(null);
   const[showReadiness,setShowReadiness]=useState(false);
@@ -1224,6 +1327,7 @@ function App(){
   useEffect(()=>{try{localStorage.setItem("sc_injuries",JSON.stringify(injuryFlags))}catch{}},[injuryFlags]);
   useEffect(()=>{try{localStorage.setItem("sc_theme",theme)}catch{}},[theme]);
   useEffect(()=>{try{localStorage.setItem("sc_swaps",JSON.stringify(swaps))}catch{}},[swaps]);
+  useEffect(()=>{try{localStorage.setItem("sc_custom",JSON.stringify(customSessions))}catch{}},[customSessions]);
 
   const handleSwap=(fromIdx,toIdx)=>{
     // Record swap for this week: swap fromIdx and toIdx day indices
@@ -1299,9 +1403,43 @@ function App(){
   const pct=Math.round((done/TOTAL_SESSIONS)*100);
   const missedPct=Math.round((missedCount/TOTAL_SESSIONS)*100);
 
+  const handleAddSession=(session)=>{
+    const key=`${week}-${dayIdx}`;
+    setCustomSessions(p=>{
+      const existing=p[key]||[];
+      return{...p,[key]:[...existing,session]};
+    });
+    setShowAddSession(false);
+    showToast(`${session.title} added ✓`);
+  };
+
+  const removeCustomSession=(dayKey,idx)=>{
+    setCustomSessions(p=>{
+      const existing=[...(p[dayKey]||[])];
+      existing.splice(idx,1);
+      const next={...p};
+      if(existing.length===0)delete next[dayKey];
+      else next[dayKey]=existing;
+      return next;
+    });
+  };
+
   const dayDate=startDate?addDays(new Date(startDate),week*7+dayIdx):null;
   const wkData=weekData[week];
-  const dayData=wkData[dayIdx];
+
+  // Apply any recorded day swaps for this week
+  const wkSwapMap=swaps[String(week)]||{};
+  const effectiveWkData=wkData.map((day,di)=>{
+    const swappedFrom=wkSwapMap[di];
+    if(swappedFrom!==undefined){
+      // This day's sessions come from the swapped day, but keep the label/day name
+      return{...wkData[swappedFrom],day:day.day,label:day.label};
+    }
+    return day;
+  });
+
+  const dayData=effectiveWkData[dayIdx];
+  const customDaySessions=(customSessions[`${week}-${dayIdx}`]||[]);
   const wkNum=week+1;
   const isDeload=wkNum===4||wkNum===8;
   const isPeak=wkNum===12;
@@ -1335,7 +1473,7 @@ function App(){
   const exportWeek=()=>{
     let txt=`SUPPER CLUB — Week ${wkNum}\n${"=".repeat(28)}\n\n`;
     if(startDate)txt+=`Week of ${addDays(new Date(startDate),week*7).toLocaleDateString("en-GB",{day:"numeric",month:"long"})}\n\n`;
-    wkData.forEach((day,di)=>{
+    effectiveWkData.forEach((day,di)=>{
       txt+=`${day.label.toUpperCase()}\n`;
       day.sessions.forEach((s,si)=>{
         const k=sKey(week,di,si);
@@ -1382,8 +1520,9 @@ function App(){
         </div>
       )}
 
-      {showSwap&&<SwapModal week={week} dayIdx={dayIdx} wkData={wkData} swaps={swaps} onSave={handleSwap} onClose={()=>setShowSwap(false)}/>}
-      {showShare&&<ShareWeekModal week={week} wkNum={wkNum} wkData={wkData} checked={checked} missed={missed} sessionLogs={sessionLogs} phase={phase} startDate={startDate} onClose={()=>setShowShare(false)}/>}
+      {showSwap&&<SwapModal week={week} dayIdx={dayIdx} wkData={effectiveWkData} swaps={swaps} onSave={handleSwap} onClose={()=>setShowSwap(false)}/>}
+      {showShare&&<ShareWeekModal week={week} wkNum={wkNum} wkData={effectiveWkData} checked={checked} missed={missed} sessionLogs={sessionLogs} phase={phase} startDate={startDate} onClose={()=>setShowShare(false)}/>}
+      {showAddSession&&<AddSessionModal onSave={handleAddSession} onClose={()=>setShowAddSession(false)}/>}
 
       {/* INJURY MODAL */}
       {showInjury&&(
@@ -1593,7 +1732,7 @@ function App(){
       {view==="day"&&(
         <>
           <div style={{display:"flex",padding:"10px 12px 0",gap:4}}>
-            {wkData.map((d,di)=>{
+            {effectiveWkData.map((d,di)=>{
               const isA=di===dayIdx,main=T[d.sessions[0].type];
               const dd=d.sessions.filter((_,si)=>checked[sKey(week,di,si)]).length;
               const dm=d.sessions.filter((_,si)=>missed[sKey(week,di,si)]).length;
@@ -1632,10 +1771,43 @@ function App(){
             })}
 
             {/* Week notes */}
-            <div style={{background:"var(--card)",borderRadius:8,padding:"12px 14px",marginBottom:16,border:`1px solid var(--border)`}}>
+            <div style={{background:"var(--card)",borderRadius:8,padding:"12px 14px",marginBottom:12,border:`1px solid var(--border)`}}>
               <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#444",marginBottom:6}}>WEEK {wkNum} NOTES</div>
               <textarea rows={2} placeholder="How's the week going? Any observations..." value={weekNotes[week]||""} onChange={e=>setWeekNotes(p=>({...p,[week]:e.target.value}))} style={{resize:"none",background:"transparent",border:"none",padding:0,color:"var(--muted)",fontSize:12,width:"100%",outline:"none",fontFamily:"'DM Mono',monospace"}}/>
             </div>
+
+            {/* Custom added sessions */}
+            {customDaySessions.map((s,ci)=>{
+              const cfg=T[s.type]||T.rest;
+              return(
+                <div key={ci} style={{background:"var(--card)",borderRadius:10,marginBottom:8,borderLeft:`3px solid ${cfg.color}`,padding:"12px 14px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
+                        <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:cfg.color,background:`${cfg.color}20`,padding:"2px 7px",borderRadius:3}}>{s.slot}</span>
+                        {s.time&&s.time!=="-"&&<span style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>{s.time}</span>}
+                        <span style={{fontSize:9,color:"var(--vdim)",fontFamily:"'DM Mono',monospace"}}>{s.duration}</span>
+                        <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#47C8FF",background:"#47C8FF18",padding:"2px 6px",borderRadius:3}}>ADDED</span>
+                      </div>
+                      <div style={{fontFamily:"'Pirata One',cursive",fontSize:18,letterSpacing:1,color:"var(--text)"}}>{cfg.icon} {s.title}</div>
+                    </div>
+                    <button onClick={()=>removeCustomSession(`${week}-${dayIdx}`,ci)} style={{background:"none",border:"none",cursor:"pointer",color:"#FF4747",fontSize:18,padding:"2px 6px",lineHeight:1,flexShrink:0}}>✕</button>
+                  </div>
+                  <ul style={{margin:"8px 0 0",padding:0,listStyle:"none"}}>
+                    {s.details.map((d,i)=>(
+                      <li key={i} style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",padding:"3px 0",borderBottom:i<s.details.length-1?`1px solid var(--border)`:"none",lineHeight:1.6}}>
+                        <span style={{color:cfg.color,marginRight:5}}>›</span>{d}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+
+            {/* Add session */}
+            <button onClick={()=>setShowAddSession(true)} style={{width:"100%",padding:"11px 0",background:"var(--card)",border:`1px dashed var(--border)`,borderRadius:10,color:"var(--dim)",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,letterSpacing:2,marginBottom:16}}>
+              + ADD SESSION TO {dayData.label.toUpperCase()}
+            </button>
 
             {/* ── NUTRITION (inline below sessions) ── */}
             <div style={{borderTop:`1px solid var(--border)`,paddingTop:16,marginBottom:4}}>
