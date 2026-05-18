@@ -270,165 +270,258 @@ function applyPacesToDetails(details, paces){
 // monGym/wedGym/friGym = PM gym after AM run
 // tueB+tueSw = both 1 makes TUE a double | thuB+thuSw = both 1 makes THU a double
 // Deload weeks (4,8) and taper (12): zero doubles by design
+// ── PLAN GENERATOR ─────────────────────────────────────────────────
+//
+// PERIODISATION LOGIC:
+//  Wk 1-3  BASE:    1 hard run (Mon intervals), Wed+Fri easy, long Sat
+//  Wk 4    DELOAD:  0 hard runs, strides only, full easy
+//  Wk 5-6  BUILD:   2 hard runs (Mon intervals + Wed tempo), Fri easy
+//  Wk 7    BUILD+:  2 hard runs (Mon intervals + Fri 1K reps), Wed easy
+//  Wk 8    DELOAD:  0 hard runs, full easy
+//  Wk 9-10 SHARPEN: 3 hard runs (Mon intervals + Wed tempo + Fri 1K)
+//  Wk 11   TAPER:   2 hard runs (Mon intervals + Fri tune-up), reduced vol
+//  Wk 12   RACE:    1 run (Fri tune-up), shakeout Sat, 5K Sun
+
+function wkPhase(wk){
+  if(wk<=3) return"base";
+  if(wk===4) return"deload";
+  if(wk<=6) return"build";
+  if(wk===7) return"build2";
+  if(wk===8) return"deload";
+  if(wk<=10) return"sharpen";
+  if(wk===11) return"taper";
+  return"race";
+}
+
+// Gym shape: which gym sessions appear as doubles
+// Kept independent of run intensity — gym provides strength not cardio stress
 const WSHAPE={
-  1: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:0}, // 1 double: MON
-  2: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:1}, // 1 double: FRI
-  3: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:0,friGym:1}, // 2 doubles: MON FRI + TUE
-  4: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:0}, // 0 doubles — deload
-  5: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuB:1,thuSw:0,friGym:1}, // 2 doubles: MON FRI
-  6: {monGym:0,tueB:1,tueSw:1,wedGym:1,thuB:0,thuSw:1,friGym:0}, // 2 doubles: TUE WED
-  7: {monGym:1,tueB:1,tueSw:1,wedGym:1,thuB:1,thuSw:0,friGym:1}, // 3 doubles: MON TUE WED FRI
-  8: {monGym:0,tueB:0,tueSw:1,wedGym:0,thuB:1,thuSw:0,friGym:0}, // 0 doubles — deload
-  9: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:1}, // 2 doubles: MON FRI
-  10:{monGym:0,tueB:1,tueSw:1,wedGym:1,thuB:0,thuSw:0,friGym:1}, // 3 doubles: TUE WED FRI
-  11:{monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:1}, // 3 doubles: MON TUE THU FRI
-  12:{monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:0}, // 0 doubles — taper
+  1: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:0},
+  2: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:1},
+  3: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:0,friGym:0},
+  4: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:0},  // deload: no gym doubles
+  5: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:0,friGym:1},
+  6: {monGym:0,tueB:1,tueSw:1,wedGym:1,thuSw:0,friGym:0},
+  7: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:1},
+  8: {monGym:0,tueB:0,tueSw:1,wedGym:0,thuSw:0,friGym:0},  // deload: minimal
+  9: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuSw:0,friGym:1},
+  10:{monGym:0,tueB:1,tueSw:0,wedGym:1,thuSw:1,friGym:1},
+  11:{monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:0},  // taper: reduce gym
+  12:{monGym:0,tueB:1,tueSw:0,wedGym:0,thuSw:0,friGym:0},  // race: minimal
 };
 
-const minsToKm=(mins)=>Math.round((mins/6)*10)/10;
-
 // ── DYNAMIC PACE COMPUTATION ───────────────────────────────────────
-// easyPaceMin is user's easy pace in seconds/km (default 6:00 = 360)
-// All paces derive from this single input
 function computePaces(easySecsPerKm){
   const e=easySecsPerKm;
-  // Relative to easy pace — derived from typical vDot relationships
-  const tempo   = Math.round(e * 0.855);
-  const hmPace  = Math.round(e * 0.810);
-  const tenK    = Math.round(e * 0.790);
-  const fiveK   = Math.round(e * 0.760);
-  const rep400  = Math.round(e * 0.738);
-  const marathon= Math.round(e * 0.905);
-  const fmt=(s,r=5)=>{const lo=s,hi=s+r;return`${Math.floor(lo/60)}:${String(lo%60).padStart(2,"0")}–${Math.floor(hi/60)}:${String(hi%60).padStart(2,"0")}/km`;};
+  const tempo   =Math.round(e*0.855);
+  const hmPace  =Math.round(e*0.810);
+  const tenK    =Math.round(e*0.790);
+  const fiveK   =Math.round(e*0.760);
+  const rep400  =Math.round(e*0.738);
+  const marathon=Math.round(e*0.905);
+  const fmt=(s,r=5)=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}–${Math.floor((s+r)/60)}:${String((s+r)%60).padStart(2,"0")}/km`;
   const f1=(s)=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}/km`;
   return{
-    easy:     {label:"Easy / Z2",        pace:fmt(e,20), color:"#47FFB8"},
-    longRun:  {label:"Long Run",         pace:fmt(e,20), color:"#47FFB8"},
-    marathon: {label:"Marathon Pace",    pace:fmt(marathon,10), color:"#47C8FF"},
-    tempo:    {label:"Tempo / Threshold",pace:fmt(tempo,10), color:"#E8FF47"},
-    hmPace:   {label:"HM Race Pace",     pace:f1(hmPace), color:"#FFB347"},
-    tenK:     {label:"10K Pace",         pace:f1(tenK), color:"#FF8C47"},
-    fiveK:    {label:"5K Pace",          pace:fmt(fiveK,5), color:"#FF6B47"},
-    reps400:  {label:"400m Rep Pace",    pace:fmt(rep400,5), color:"#FF4747"},
+    easy:    {label:"Easy / Z2",         pace:fmt(e,20), color:"#47FFB8"},
+    longRun: {label:"Long Run",          pace:fmt(e,20), color:"#47FFB8"},
+    marathon:{label:"Marathon Pace",     pace:fmt(marathon,10),color:"#47C8FF"},
+    tempo:   {label:"Tempo / Threshold", pace:fmt(tempo,10),  color:"#E8FF47"},
+    hmPace:  {label:"HM Race Pace",      pace:f1(hmPace),     color:"#FFB347"},
+    tenK:    {label:"10K Pace",          pace:f1(tenK),       color:"#FF8C47"},
+    fiveK:   {label:"5K Pace",           pace:fmt(fiveK,5),   color:"#FF6B47"},
+    reps400: {label:"400m Rep Pace",     pace:fmt(rep400,5),  color:"#FF4747"},
   };
 }
 
+const minsToKm=(mins)=>Math.round((mins/6)*10)/10;
+
 function makeWeek(wk){
-  const p=wk<=3?1:wk<=7?2:3;
-  const isDeload=wk===4||wk===8;
-  const isPeak=wk===12;
+  const ph=wkPhase(wk);
+  const isDeload=ph==="deload";
+  const isTaper=ph==="taper";
+  const isPeak=ph==="race";
   const sh=WSHAPE[wk]||WSHAPE[1];
-  const W=weights(p,isDeload);
-  const intReps=isDeload?5:p===1?7:p===2?9:10;
-  const tempoMin=isDeload?15:p===1?22:p===2?28:32;
-  const longMin=isDeload?55:p===1?75:p===2?90:isPeak?60:100;
-  const bikeZ2=isDeload?45:p===1?70:p===2?85:90;
-  const bikeTmp=isDeload?40:p===1?55:p===2?65:75;
-  const kReps=isDeload?4:p===1?5:p===2?6:7;
-  const swimDist=isDeload?"easy 800m":p===1?"4x300m":p===2?"4x400m":"5x400m";
-  const hpc=p===1?"4x4":p===2?"4x5":"5x4";
-  const adj400=p===2?" (target 4:22-4:27)":p===3?" (target 4:18-4:23)":"";
-  const adj1k=p===2?" (target 4:42)":p===3?" (target 4:38)":"";
-  const adjTmp=p===2?" (push to 5:05-5:10)":p===3?" (push to 5:00-5:05)":"";
+
+  // Weight progression: base p=1, build p=2, sharpen p=3, deload/taper back off
+  const wp=isDeload||isTaper?1:wk<=3?1:wk<=7?2:3;
+  const W=weights(wp,isDeload);
+
+  // Long run: build gradually, drop in deloads and taper
+  const longMin=isDeload?50:isPeak?25:isTaper?65:wk<=3?70:wk<=6?80:wk<=7?90:wk<=10?95:75;
   const longKm=minsToKm(longMin);
+
+  // Hard session params — only used in weeks that have them
+  const intReps=wk<=3?6:wk<=6?8:wk<=10?10:8;
+  const tempoMin=wk<=6?20:wk<=10?28:24;
+  const kReps=wk<=7?5:wk<=10?7:5;
+  const swimDist=isDeload?"easy 800m":wk<=3?"4x200m":wk<=7?"4x300m":"4x400m";
+  const bikeZ2=isDeload?40:wk<=3?55:wk<=7?70:85;
+  const bikeTmp=isDeload?35:wk<=3?45:wk<=7?55:65;
+  const hpc=wp===1?"3x4":wp===2?"4x4":"4x5";
   const n2=nutrition.doubleAM,n1=nutrition.singleAM;
 
-  const monRun={slot:"AM",time:"06:30",type:"run",preRun:true,
-    title:isDeload?"Easy Strides":"Track 400m Intervals",duration:isDeload?"35 min":"50 min",
-    paceKeys:isDeload?["easy"]:["easy","reps400"],cooldown:isDeload?"easy":"intervals",mobility:"postRun",
-    details:isDeload?["10 min easy @ 6:00-6:20/km","6x20s strides - fast but relaxed, full recovery","10 min easy cool-down"]
-      :["Warm-up: 10 min @ 6:00-6:20/km + drills","Main: "+intReps+"x400m @ 4:25-4:30/km (85-90s rest)"+adj400,"Cool-down: 10 min @ 6:00-6:20/km","Cue: quick turnover, tall hips, relaxed shoulders"],
-    rpe:isDeload?5:8};
+  // ── EASY RUN (used on non-hard days and deload weeks) ─────────────
+  const easyRun=(dur,slot="AM",time="06:30")=>({
+    slot,time,type:"run",preRun:true,
+    title:"Easy Run",duration:dur,
+    paceKeys:["easy"],cooldown:"easy",mobility:"postRun",
+    details:["Fully conversational pace throughout","No watch pressure — run by feel","Biggest mistake is going too fast on easy days","Build aerobic base without digging into recovery"],
+    rpe:4
+  });
+
+  // ── MON: Hard session — 400m intervals (Base+) or easy strides (Deload) ──
+  const monRun=isDeload||isTaper||isPeak?{
+    slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:isPeak?"Easy Run":isTaper?"Easy Run + Strides":"Easy Strides",duration:isPeak?"25 min":isTaper?"35 min":"30 min",
+    paceKeys:["easy"],cooldown:"easy",mobility:"postRun",
+    details:isPeak?["25 min easy — protect the legs before the race","Stay fully conversational — this is not a workout","Just get the blood moving"]
+      :["20 min easy @ easy pace","5x20s relaxed strides — feel fast, not forced","Full walk recovery between strides","Legs should feel good — don't push it"],
+    rpe:isPeak?3:4
+  }:{
+    slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:"Track 400m Intervals",duration:"50 min",
+    paceKeys:["easy","reps400"],cooldown:"intervals",mobility:"postRun",
+    details:[
+      "Warm-up: 10 min easy @ easy pace + drills",
+      "Main: "+intReps+"x400m @ rep pace (85-90s rest between)",
+      "Cool-down: 10 min easy",
+      "Cue: quick turnover, tall hips — don't tense up",
+      "Negative split the reps where possible"
+    ],
+    rpe:8
+  };
+
   const monGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
-    title:"Lower Power + Speed Transfer",duration:isDeload?"40 min":"55 min",
+    title:"Lower Power + Speed Transfer",duration:isDeload?"35 min":"55 min",
     paceKeys:[],cooldown:"gym",mobility:"postGym",
-    details:isDeload?["Trap bar deadlift 3x3 @ "+W.trapDL,"Box jump 3x4 - bodyweight","Core 10 min","10 min sauna"]
-      :["Trap bar deadlift 4x4 @ "+W.trapDL+" - explosive, controlled","Single-leg box jump 4x5 each - bodyweight","Bulgarian split squat 3x8 @ "+W.splitSquat+" total (DBs)","Nordic hamstring curl 3x6 - "+W.nordics,"Copenhagen plank 3x20s each - "+W.copHold,"Dead bug 3x10","10 min sauna"],
-    gymExercises:isDeload?[]:["Trap bar deadlift","Bulgarian split squat","Nordic curl"],rpe:isDeload?5:7};
+    details:isDeload?["Trap bar deadlift 3x3 @ "+W.trapDL+" — easy, technique focus","Box jump 3x4 — bodyweight","Core 10 min","10 min sauna"]
+      :["Trap bar deadlift 4x4 @ "+W.trapDL+" — explosive up, controlled down","Single-leg box jump 4x5 each — bodyweight","Bulgarian split squat 3x8 @ "+W.splitSquat+" total","Nordic hamstring curl 3x6 — "+W.nordics,"Copenhagen plank 3x20s each — bodyweight","Dead bug 3x10","10 min sauna"],
+    gymExercises:isDeload?[]:["Trap bar deadlift","Bulgarian split squat","Nordic curl"],rpe:isDeload?4:7};
+
+  // ── TUE: Bike (aerobic cross-training) ───────────────────────────
   const tueBike={slot:"AM",time:"06:30",type:"cycle",preRun:false,
-    title:isDeload?"Easy Spin":"Bike Tempo Intervals",duration:isDeload?"40 min":bikeTmp+" min",
+    title:isDeload?"Easy Spin":"Zone 2 Bike",duration:isDeload?"35 min":bikeZ2+" min",
     paceKeys:[],cooldown:"easy",mobility:null,
-    details:isDeload?["Pure easy Zone 2 spin","Cadence 85-90 rpm","No targets"]
-      :["10 min easy spin warm-up","3x"+(p===1?10:p===2?13:15)+" min @ threshold feel (3 min easy between)","10 min cool-down spin","Target cadence: 88-95 rpm"],
-    rpe:isDeload?4:7};
-  const tueSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
-    title:"Steady Swim",duration:isDeload?"30 min":"45 min",
-    paceKeys:[],cooldown:"swim",mobility:null,
-    details:isDeload?["400m easy mixed stroke","Focus on breathing"]
-      :["400m warm-up",swimDist+" freestyle @ 70% effort, 30s rest","200m cool-down","Cue: high elbow catch, long glide"],
-    rpe:isDeload?3:6};
-  const wedRun={slot:"AM",time:"06:30",type:"run",preRun:true,
-    title:isDeload?"Easy Run":"Tempo Run",duration:isDeload?"30 min":"45 min",
-    paceKeys:isDeload?["easy"]:["easy","tempo"],cooldown:isDeload?"easy":"tempo",mobility:"postRun",
-    details:isDeload?["30 min easy @ 6:00-6:20/km"]
-      :["Warm-up: 10 min @ 6:00-6:20/km","Main: "+tempoMin+" min @ 5:05-5:15/km"+adjTmp,"Cool-down: 10 min @ 6:00-6:20/km","Cue: tall posture, forward lean, glutes firing","If it feels hard, you're on pace"],
-    rpe:isDeload?4:7};
-  const wedGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
-    title:"Upper Power + Rotational",duration:isDeload?"40 min":"55 min",
-    paceKeys:[],cooldown:"gym",mobility:"postGym",
-    details:isDeload?["Hang power clean 3x3 @ "+W.powerClean,"Pull-up 3x5 - "+W.pullUp,"Core 10 min","15 min steam room"]
-      :["Hang power clean "+hpc+" @ "+W.powerClean+" - triple extension","Weighted pull-up 4x5 - "+W.pullUp,"Single-arm DB row 3x10 each @ "+W.dbRow,"Landmine rotational press 3x8 each @ "+W.landmine,"Pallof press 3x12 each side @ "+W.pallof,"Hollow body hold 3x30s","15 min steam room"],
-    gymExercises:isDeload?[]:["Hang power clean","Weighted pull-up","Single-arm DB row","Landmine press"],rpe:isDeload?5:7};
-  const thuBike={slot:"AM",time:"06:30",type:"cycle",preRun:false,
-    title:"Zone 2 Bike",duration:isDeload?"45 min":bikeZ2+" min",
-    paceKeys:[],cooldown:"easy",mobility:null,
-    details:isDeload?["Pure Zone 2 - 60-65% max HR","Active recovery"]
-      :["Zone 2 only - 60-70% max HR","Fat oxidation + aerobic base","If you're breathing hard, go easier"],
+    details:isDeload?["Pure easy spin — 55-65% max HR","Cadence 85-90 rpm","Flush the legs from Monday"]
+      :["Zone 2 — 60-70% max HR throughout","Aerobic base building without run impact","Cadence 85-95 rpm","If you're breathing hard, ease off"],
     rpe:isDeload?3:4};
-  const thuSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
-    title:"Recovery Swim + Mobility",duration:"35 min",
+
+  const tueSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
+    title:"Steady Swim",duration:isDeload?"25 min":"40 min",
     paceKeys:[],cooldown:"swim",mobility:null,
-    details:["800m easy mixed stroke - no targets","10 min poolside hip flexor + thoracic mobility","10 min sauna post-swim"],rpe:3};
-  const friRun={slot:"AM",time:"06:30",type:"run",preRun:true,
-    title:isDeload?"Easy Run":isPeak?"Race Pace Tune-Up":"1K Repeats",
-    duration:isDeload?"30 min":isPeak?"35 min":"50 min",
-    paceKeys:isDeload?["easy"]:isPeak?["easy","fiveK"]:["easy","tenK"],cooldown:isDeload?"easy":"intervals",mobility:"postRun",
-    details:isDeload?["30 min easy @ 6:00-6:20/km"]
-      :isPeak?["10 min easy warm-up @ 6:00/km","3x1K @ 4:33-4:38/km - feel sharp","10 min easy cool-down","Legs should feel fast - trust the taper"]
-      :["Warm-up: 10 min @ 6:00-6:20/km + drills","Main: "+kReps+"x1000m @ 4:45/km (2 min rest)"+adj1k,"Cool-down: 10 min @ 6:00-6:20/km","Hold form in final reps"],
-    rpe:isDeload?4:isPeak?7:8};
-  const friGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
-    title:"Glute & Hip Drive",duration:isDeload?"35 min":"50 min",
+    details:isDeload?["600m easy mixed stroke","Focus on breathing rhythm only"]
+      :["300m warm-up",swimDist+" freestyle @ 65-70% effort, 30s rest","200m cool-down","High elbow catch — don't push water down"],
+    rpe:isDeload?3:5};
+
+  // ── WED: Hard (tempo) in build/sharpen, easy in base/deload/taper ──
+  const hardWed=ph==="build"||ph==="sharpen";
+  const wedRun=(!hardWed)?easyRun(isDeload?"25 min":"35 min"):{
+    slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:"Tempo Run",duration:"45 min",
+    paceKeys:["easy","tempo"],cooldown:"tempo",mobility:"postRun",
+    details:[
+      "Warm-up: 10 min easy @ easy pace",
+      "Main: "+tempoMin+" min @ tempo pace — comfortably hard",
+      "Cool-down: 10 min easy",
+      "Cue: tall posture, forward lean from the ankles",
+      "You should be able to say a few words but not have a conversation"
+    ],
+    rpe:7
+  };
+
+  const wedGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
+    title:"Upper Power + Rotational",duration:isDeload?"35 min":"55 min",
     paceKeys:[],cooldown:"gym",mobility:"postGym",
-    details:isDeload?["Hip thrust 3x6 @ "+W.hipThrust,"Step-up 3x6 each @ "+W.stepUp+"/hand","Band walk 10 min"]
-      :["Barbell hip thrust 4x8 @ "+W.hipThrust+" - full contraction","Depth jump to 10m sprint 4x"+(p===1?3:p===2?4:5),"Step-up + knee drive 3x10 each @ "+W.stepUp+"/hand","Lateral band walk 3x20 each direction","Farmer carry 3x30m @ "+W.farmerCarry+"/hand","Side plank + hip abduction 3x15 each"],
-    gymExercises:isDeload?[]:["Barbell hip thrust","Step-up","Farmer carry"],rpe:isDeload?4:7};
+    details:isDeload?["Hang power clean 3x3 @ "+W.powerClean,"Pull-up 3x5 — "+W.pullUp,"Core 10 min","15 min steam room"]
+      :["Hang power clean "+hpc+" @ "+W.powerClean+" — triple extension = speed","Weighted pull-up 4x5 — "+W.pullUp,"Single-arm DB row 3x10 each @ "+W.dbRow,"Landmine rotational press 3x8 each @ "+W.landmine,"Pallof press 3x12 each side @ "+W.pallof,"Hollow body hold 3x30s","15 min steam room"],
+    gymExercises:isDeload?[]:["Hang power clean","Weighted pull-up","Single-arm DB row","Landmine press"],rpe:isDeload?4:7};
+
+  // ── THU: Always aerobic recovery ─────────────────────────────────
+  const thuRun=easyRun(isDeload||isPeak?"20 min":isTaper?"30 min":"40 min");
+  const thuSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
+    title:"Recovery Swim",duration:"30 min",
+    paceKeys:[],cooldown:"swim",mobility:null,
+    details:["600m-800m easy — no targets","Flush the legs, loosen shoulders","10 min poolside hip flexor + thoracic mobility","Sauna 10 min if available"],rpe:2};
+
+  // ── FRI: Hard (1K reps or tune-up) in build2/sharpen/race, easy otherwise ──
+  const hardFri=ph==="build2"||ph==="sharpen"||ph==="taper"||ph==="race";
+  const friRun=(!hardFri)?easyRun(isDeload?"25 min":"35 min"):{
+    slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:isPeak?"Race Pace Tune-Up":isTaper?"Tune-Up 1K Reps":"1K Repeats",
+    duration:isPeak?"35 min":isTaper?"40 min":"50 min",
+    paceKeys:isPeak?["easy","fiveK"]:["easy","tenK"],cooldown:"intervals",mobility:"postRun",
+    details:isPeak?
+      ["10 min easy warm-up","3x1K @ 5K pace — feel sharp, not blown out","10 min easy cool-down","Legs should feel fast — trust the taper"]
+      :isTaper?
+      ["10 min easy warm-up","4x1K @ 10K pace (2 min rest)","10 min easy cool-down","Last hard session before race week — make it count"]
+      :[
+        "Warm-up: 10 min easy + drills",
+        "Main: "+kReps+"x1000m @ 10K pace (90s-2 min rest)",
+        "Cool-down: 10 min easy",
+        "Hold form in final reps — don't blow up early"
+      ],
+    rpe:isPeak?7:isTaper?7:8
+  };
+
+  const friGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
+    title:"Glute & Hip Drive",duration:isDeload?"30 min":"50 min",
+    paceKeys:[],cooldown:"gym",mobility:"postGym",
+    details:isDeload?["Hip thrust 3x6 @ "+W.hipThrust,"Step-up 3x6 each @ "+W.stepUp+"/hand","Band work 10 min"]
+      :["Barbell hip thrust 4x8 @ "+W.hipThrust+" — full contraction at top","Depth jump to 10m sprint 4x"+(wp===1?3:4)+" — reactive","Step-up + knee drive 3x10 each @ "+W.stepUp+"/hand","Lateral band walk 3x20 each direction","Farmer carry 3x30m @ "+W.farmerCarry+"/hand","Side plank + hip abduction 3x15 each"],
+    gymExercises:isDeload?[]:["Barbell hip thrust","Step-up","Farmer carry"],rpe:isDeload?3:7};
 
   const restDay={slot:"-",time:"-",type:"rest",preRun:false,title:"Active Recovery",duration:"-",
     paceKeys:[],cooldown:null,mobility:null,
     details:["Light walk or complete rest","Foam roll — quads, calves, glutes 10 min","10-15 min sauna if available"],rpe:1};
 
+  // ── BUILD DAY SESSIONS ────────────────────────────────────────────
   const monS=[monRun,...(sh.monGym?[monGym]:[])];
-  const tueS=sh.tueB&&sh.tueSw?[tueBike,tueSw]:sh.tueB?[tueBike]:sh.tueSw?[tueSw]:[restDay];
+  const tueS=sh.tueB&&sh.tueSw?[tueBike,tueSw]:sh.tueB?[tueBike]:sh.tueSw?[thuSw]:[restDay];
   const wedS=[wedRun,...(sh.wedGym?[wedGym]:[])];
-  const thuS=sh.thuB&&sh.thuSw?[thuBike,thuSw]:sh.thuB?[thuBike]:sh.thuSw?[thuSw]:[restDay];
+  const thuS=sh.thuSw?[thuRun,thuSw]:[thuRun];
   const friS=[friRun,...(sh.friGym?[friGym]:[])];
 
+  // ── THEMES ────────────────────────────────────────────────────────
+  const hardCount=((!isDeload&&!isTaper)?1:0)+(hardWed?1:0)+(hardFri?1:0);
+  const monTheme=isDeload||isTaper?"Easy + Strides":sh.monGym?"Intervals + Lower Power":"Track Intervals";
+  const wedTheme=hardWed?sh.wedGym?"Tempo + Upper Power":"Tempo Run":isDeload?"Easy Run":"Easy Run";
+  const friTheme=hardFri?sh.friGym?"1K Reps + Glute Drive":isPeak?"Race Tune-Up":isTaper?"Tune-Up Reps":"1K Repeats":isDeload?"Easy Run":"Easy Run";
+  const phaseLabel=isDeload?"DELOAD":isPeak?"RACE WEEK":isTaper?"TAPER":ph==="base"?"BASE — aerobic foundation":ph==="build"||ph==="build2"?"BUILD — adding quality":"SHARPEN — peak intensity";
+
   return[
-    {day:"MON",label:"Monday",theme:sh.monGym?"Speed + Lower Power":isDeload?"Easy Strides":"Speed Run",nutrition:sh.monGym?n2:n1,sessions:monS},
-    {day:"TUE",label:"Tuesday",theme:sh.tueB&&sh.tueSw?(isDeload?"Easy Spin + Swim":"Threshold Bike + Swim"):sh.tueB?(isDeload?"Easy Spin":"Tempo Bike"):sh.tueSw?(isDeload?"Recovery Swim":"Steady Swim"):"Rest & Recovery",nutrition:(sh.tueB&&sh.tueSw)?n2:n1,sessions:tueS},
-    {day:"WED",label:"Wednesday",theme:sh.wedGym?"Tempo Run + Upper Power":isDeload?"Easy Run":"Tempo Run",nutrition:sh.wedGym?n2:n1,sessions:wedS},
-    {day:"THU",label:"Thursday",theme:sh.thuB&&sh.thuSw?"Zone 2 Bike + Recovery Swim":sh.thuB?"Zone 2 Bike":sh.thuSw?"Recovery Swim":"Rest & Recovery",nutrition:(sh.thuB&&sh.thuSw)?n2:n1,sessions:thuS},
-    {day:"FRI",label:"Friday",theme:sh.friGym?"Speed Endurance + Glute Drive":isPeak?"Race Pace Tune-Up":isDeload?"Easy Run":"Speed Endurance",nutrition:sh.friGym?n2:n1,sessions:friS},
+    {day:"MON",label:"Monday",theme:monTheme,nutrition:sh.monGym?n2:n1,sessions:monS},
+    {day:"TUE",label:"Tuesday",theme:sh.tueB?"Zone 2 Bike":"Rest & Recovery",nutrition:sh.tueB?n1:n1,sessions:tueS},
+    {day:"WED",label:"Wednesday",theme:wedTheme,nutrition:sh.wedGym?n2:n1,sessions:wedS},
+    {day:"THU",label:"Thursday",theme:sh.thuSw?"Easy Run + Recovery Swim":"Easy Run",nutrition:sh.thuSw?n2:n1,sessions:thuS},
+    {day:"FRI",label:"Friday",theme:friTheme,nutrition:sh.friGym?n2:n1,sessions:friS},
     {day:"SAT",label:"Saturday",theme:isPeak?"Shakeout Run":"Long Run",nutrition:nutrition.longRun,sessions:[
-      {slot:"AM",time:"07:00",type:"run",preRun:true,title:isPeak?"Easy Shakeout":"Long Aerobic Run",
-       duration:isPeak?"25 min":longMin+" min",paceKeys:isPeak?["easy"]:p>=2?["longRun","marathon"]:["longRun"],
+      {slot:"AM",time:"07:00",type:"run",preRun:true,
+       title:isPeak?"Easy Shakeout":"Long Aerobic Run",
+       duration:isPeak?"25 min":longMin+" min",
+       paceKeys:isPeak?["easy"]:wk>=9?["longRun","marathon"]:["longRun"],
        cooldown:isPeak?"easy":"longRun",mobility:"postRun",
        longRunData:isPeak?null:{mins:longMin,km:longKm},
-       details:isPeak?["25 min fully easy @ 6:00-6:20/km","Shake the legs, stay loose","Visualise your 5K test tomorrow"]
-         :[longMin+" min / ~"+longKm+"km @ 6:00-6:20/km","Do not push - the easy pace is the point","Biggest aerobic adaptation of the week",
-           p===1?"Stay easy the whole way":p===2?"Last 10 min can drift to 5:25-5:30/km":"Final 15 min at 5:25-5:30/km"],
-       rpe:isPeak?3:5},
+       details:isPeak?["25 min fully easy — shake the legs","Stay loose, don't race it","Visualise the 5K tomorrow"]
+         :[longMin+" min / ~"+longKm+"km @ easy pace",
+           "This is the most important session of the week",
+           "Run easy — aerobic gains happen here, not in the hurt locker",
+           wk<=3?"Stay easy the whole way — build the engine without burning it":
+           wk<=6?"Last 5-10 min can drift to marathon pace if legs feel good":
+           wk<=10?"Final 15 min at marathon pace — practice running tired":
+           "Keep it easy — you're in taper, protect the legs"],
+       rpe:isPeak?3:isDeload?4:isTaper?4:5}
     ]},
     {day:"SUN",label:"Sunday",theme:isPeak?"5K TEST DAY":"Full Rest",nutrition:isPeak?nutrition.longRun:nutrition.restDay,sessions:[
-      {slot:"-",time:"-",type:isPeak?"run":"rest",preRun:isPeak,title:isPeak?"5K Time Trial":"Full Rest",
-       duration:isPeak?"40 min":"-",paceKeys:isPeak?["fiveK"]:[],cooldown:isPeak?"intervals":null,mobility:isPeak?"postRun":null,
-       details:isPeak?["10 min easy warm-up @ 6:00/km + 3 strides","5K ALL OUT - target 4:33-4:38/km (sub-23:00)","10 min easy cool-down","Compare to Week 1 baseline","After 12 weeks expect 10-20s/km faster on rep pace"]
-         :["Complete rest - no training","Optional 20 min sauna + cold contrast","Sleep 8+ hrs","Prep for next week"],
-       rpe:isPeak?10:1},
+      {slot:"-",time:"-",type:isPeak?"run":"rest",preRun:isPeak,
+       title:isPeak?"5K Time Trial":"Full Rest",duration:isPeak?"40 min":"-",
+       paceKeys:isPeak?["fiveK"]:[],cooldown:isPeak?"intervals":null,mobility:isPeak?"postRun":null,
+       details:isPeak?["10 min easy warm-up @ easy pace + 3 strides","5K ALL OUT — target sub-23:00","10 min easy cool-down","This is what 12 weeks was for","Compare to where you started"]
+         :["Complete rest — this is when you adapt","Optional 20 min sauna + cold contrast","Sleep 8+ hrs","Prepare mentally for the next week"],
+       rpe:isPeak?10:1}
     ]},
   ];
 }
+
 
 
 const weekData=Array.from({length:12},(_,i)=>makeWeek(i+1));
