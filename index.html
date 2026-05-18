@@ -205,36 +205,37 @@ function weights(p,isDeload){
 }
 
 // ── NUTRITION DATA ─────────────────────────────────────────────────
+// Nutrition: timing + macro targets only, no food suggestions (meal picker coming)
 const nutrition={
   doubleAM:[
-    {time:"06:00",label:"Pre-Session 1",color:"#E8FF47",food:"Oat porridge (80g + oat milk) + banana + black coffee"},
-    {time:"08:00",label:"Post-Session 1",color:"#47C8FF",food:"3 scrambled eggs + 1 slice sourdough + 200ml oat milk"},
-    {time:"12:00",label:"Lunch",color:"#47FFB8",food:"Chicken rice bowl + broccoli + olive oil (40g+ protein)"},
-    {time:"18:00",label:"Pre-Session 2",color:"#E8FF47",food:"2 rice cakes + 1 tbsp almond butter + banana"},
-    {time:"20:15",label:"Post-Session 2",color:"#47C8FF",food:"Salmon + sweet potato + peas — full recovery meal"},
-    {time:"21:30",label:"Evening",color:"var(--muted)",food:"Coconut yoghurt + frozen berries + mixed nuts"},
+    {time:"06:00",label:"Pre-Session 1",color:"#E8FF47",carb:50,pro:10,fat:5,note:"Fast-digesting carbs + small protein. 30 min before."},
+    {time:"08:00",label:"Post-Session 1",color:"#47C8FF",carb:40,pro:35,fat:15,note:"Protein priority. Replenish glycogen."},
+    {time:"12:00",label:"Lunch",color:"#47FFB8",carb:70,pro:40,fat:20,note:"Biggest meal. Complex carbs + lean protein."},
+    {time:"18:00",label:"Pre-Session 2",color:"#E8FF47",carb:40,pro:10,fat:5,note:"Light carb top-up. Easy to digest."},
+    {time:"20:15",label:"Post-Session 2",color:"#47C8FF",carb:50,pro:35,fat:15,note:"Full recovery meal. Protein + carbs within 30 min."},
+    {time:"21:30",label:"Evening",color:"#888",carb:20,pro:15,fat:10,note:"Light. Casein protein if possible — slow-release overnight."},
   ],
   singleAM:[
-    {time:"06:00",label:"Pre-Session",color:"#E8FF47",food:"Banana + 1 tbsp almond butter — light & fast"},
-    {time:"08:00",label:"Post-Session",color:"#47C8FF",food:"3 eggs any style + 1 slice sourdough + ½ avocado"},
-    {time:"12:30",label:"Lunch",color:"#47FFB8",food:"Tuna/chickpea bowl + brown rice + spinach"},
-    {time:"16:00",label:"Snack",color:"var(--muted)",food:"30g mixed nuts + 2 squares dark chocolate"},
-    {time:"19:00",label:"Dinner",color:"#FF6B47",food:"Chicken thigh + sweet potato + greens"},
+    {time:"06:00",label:"Pre-Session",color:"#E8FF47",carb:40,pro:10,fat:5,note:"Fast carbs + small protein. Keep it light."},
+    {time:"08:00",label:"Post-Session",color:"#47C8FF",carb:50,pro:35,fat:15,note:"Recovery window. Hit protein within 30 min."},
+    {time:"12:30",label:"Lunch",color:"#47FFB8",carb:80,pro:40,fat:20,note:"Biggest meal of the day. Carbs + protein."},
+    {time:"16:00",label:"Snack",color:"#888",carb:25,pro:15,fat:10,note:"Bridge to dinner. Keep hunger in check."},
+    {time:"19:00",label:"Dinner",color:"#FF6B47",carb:60,pro:35,fat:20,note:"Balanced. Wind down carbs slightly if no evening session."},
   ],
   longRun:[
-    {time:"06:30",label:"Pre-Run",color:"#E8FF47",food:"BIG oat porridge (100g) + banana + honey + oat milk — don't skip this"},
-    {time:"09:00",label:"Mid-Run",color:"#E8FF47",food:"Date or banana at 45 min mark if run >75 min"},
-    {time:"09:30",label:"Post-Run",color:"#47C8FF",food:"4 eggs + 2 slices sourdough + avocado + OJ — earned it"},
-    {time:"13:00",label:"Lunch",color:"#47FFB8",food:"Lentil soup + sourdough or big chicken salad"},
-    {time:"16:00",label:"Snack",color:"var(--muted)",food:"Banana + almond butter — keep glycogen up"},
-    {time:"19:00",label:"Dinner",color:"#FF6B47",food:"Coconut chicken curry + brown rice — carb refuel"},
+    {time:"06:30",label:"Pre-Run",color:"#E8FF47",carb:70,pro:15,fat:5,note:"Biggest pre-run meal. 90 min before if possible. Don't skip."},
+    {time:"09:00",label:"Mid-Run",color:"#E8FF47",carb:30,pro:0,fat:0,note:"Simple carbs every 45 min if run >60 min. Gel or fruit."},
+    {time:"09:30",label:"Post-Run",color:"#47C8FF",carb:70,pro:40,fat:15,note:"Immediate recovery. You've earned the carbs."},
+    {time:"13:00",label:"Lunch",color:"#47FFB8",carb:80,pro:40,fat:20,note:"Keep fuelling. Glycogen still replenishing."},
+    {time:"16:00",label:"Snack",color:"#888",carb:30,pro:15,fat:10,note:"Keep glycogen topped up through the afternoon."},
+    {time:"19:00",label:"Dinner",color:"#FF6B47",carb:70,pro:40,fat:20,note:"Carb-rich dinner. Tomorrow's engine fuel."},
   ],
   restDay:[
-    {time:"09:00",label:"Brunch",color:"#47FFB8",food:"3 eggs + ½ avocado + sourdough + cherry tomatoes"},
-    {time:"13:00",label:"Lunch",color:"#47FFB8",food:"Tuna salad — light protein, lower carbs today"},
-    {time:"16:00",label:"Snack",color:"var(--muted)",food:"Rice cakes + almond butter or handful of nuts"},
-    {time:"19:30",label:"Dinner",color:"#FF6B47",food:"Chickpea & sweet potato curry + small portion rice"},
-    {time:"21:00",label:"Optional",color:"var(--muted)",food:"Dark chocolate (2–3 squares) — rest day treat"},
+    {time:"09:00",label:"Brunch",color:"#47FFB8",carb:50,pro:30,fat:20,note:"Lower carbs today. Protein stays high."},
+    {time:"13:00",label:"Lunch",color:"#47FFB8",carb:50,pro:35,fat:20,note:"Protein-led. Reduce carbs — no sessions to fuel."},
+    {time:"16:00",label:"Snack",color:"#888",carb:20,pro:15,fat:10,note:"Light. Nuts or protein-based."},
+    {time:"19:30",label:"Dinner",color:"#FF6B47",carb:60,pro:35,fat:20,note:"Slightly higher carb to pre-load for tomorrow."},
+    {time:"21:00",label:"Optional",color:"#888",carb:10,pro:15,fat:5,note:"Casein protein if hungry. Skip if not."},
   ],
 };
 
@@ -333,7 +334,7 @@ function computePaces(easySecsPerKm){
   };
 }
 
-const minsToKm=(mins)=>Math.round((mins/6)*10)/10;
+const minsToKm=(mins,paceSecs=360)=>Math.round((mins/(paceSecs/60))*10)/10;
 
 function makeWeek(wk){
   const ph=wkPhase(wk);
@@ -348,7 +349,7 @@ function makeWeek(wk){
 
   // Long run: build gradually, drop in deloads and taper
   const longMin=isDeload?50:isPeak?25:isTaper?65:wk<=3?70:wk<=6?80:wk<=7?90:wk<=10?95:75;
-  const longKm=minsToKm(longMin);
+  const longKm=minsToKm(longMin,360); // rendered value overridden by pace slider at display time
 
   // Hard session params — only used in weeks that have them
   const intReps=wk<=3?6:wk<=6?8:wk<=10?10:8;
@@ -1460,8 +1461,11 @@ function App(){
 
   useEffect(()=>{
     const day=weekData[week][dayIdx];
-    const allActioned=day.sessions.every((_,si)=>checked[sKey(week,dayIdx,si)]||missed[sKey(week,dayIdx,si)]);
-    if(!allActioned)return;
+    const keys=day.sessions.map((_,si)=>sKey(week,dayIdx,si));
+    const allActioned=keys.every(k=>checked[k]||missed[k]);
+    const anyDone=keys.some(k=>checked[k]);
+    // Only advance if all actioned AND at least one was done (not all missed)
+    if(!allActioned||!anyDone)return;
     const ndi=dayIdx+1;
     if(ndi<weekData[week].length){
       const t=setTimeout(()=>{setDayIdx(ndi);showToast(`${day.label} done ✓  →  ${weekData[week][ndi].label}`)},600);
@@ -1541,8 +1545,9 @@ function App(){
   const todayReadiness=readiness[todayKey];
 
   const resetPlan=()=>{
-    ["sc_progress","sc_missed","sc_logs","sc_readiness","sc_weeknotes","sc_5ktimes","sc_racechecks","sc_startdate"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
+    ["sc_progress","sc_missed","sc_logs","sc_readiness","sc_weeknotes","sc_5ktimes","sc_racechecks","sc_startdate","sc_swaps","sc_custom","sc_easypace"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
     setChecked({});setMissed({});setSessionLogs({});setReadiness({});setWeekNotes({});setFiveKTimes([]);
+    setSwaps({});setCustomSessions({});setEasyPaceSecs(360);
     setWeek(0);setDayIdx(0);setStartDate(null);setShowReset(false);
     showToast("Plan reset — set a new start date");
   };
@@ -1792,7 +1797,6 @@ function App(){
           <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#444"}}>SELECT WEEK</div>
           <div style={{display:"flex",gap:8}}>
             <button onClick={()=>setShowInjury(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:Object.values(injuryFlags).some(Boolean)?"#FFB347":"var(--dim)",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>⚠️ INJURY</button>
-            <button onClick={exportWeek} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>↗ EXPORT</button>
             <button onClick={()=>setShowShare(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#47C8FF",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>📸 SHARE</button>
             <button onClick={()=>setShowReset(true)} style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FF4747",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>↺ RESET</button>
           </div>
@@ -1851,12 +1855,15 @@ function App(){
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 {dayData.sessions.length>1&&dayData.sessions.some(s=>s.type!=="rest")&&<span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#E8FF47",border:"1px solid #E8FF4740",padding:"3px 7px",borderRadius:3}}>DOUBLE DAY</span>}
-                <button onClick={()=>setShowSwap(true)} style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#47C8FF",background:"none",border:"1px solid #47C8FF30",borderRadius:4,padding:"3px 7px",cursor:"pointer",letterSpacing:1}}>⇄ SWAP</button>
+                {dayData.sessions.some(s=>s.type!=="rest")&&<button onClick={()=>setShowSwap(true)} style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"#47C8FF",background:"none",border:"1px solid #47C8FF30",borderRadius:4,padding:"3px 7px",cursor:"pointer",letterSpacing:1}}>⇄ SWAP</button>}
                 <span style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"var(--border)",letterSpacing:1}}>← swipe →</span>
               </div>
             </div>
             {dayData.sessions.map((s,si)=>{
-              const dynamicS={...s,details:applyPacesToDetails(s.details,PACES_COMPUTED)};
+              const dynamicS={...s,
+                details:applyPacesToDetails(s.details,PACES_COMPUTED),
+                longRunData:s.longRunData?{...s.longRunData,km:minsToKm(s.longRunData.mins,easyPaceSecs)}:null
+              };
               return(
               <SessionCard key={si} s={dynamicS} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed} injuryFlags={injuryFlags} paces={PACES_COMPUTED}
                 onLog={()=>setLogModal({session:s,key:`log-${week}-${dayIdx}-${si}`})} logData={sessionLogs[`log-${week}-${dayIdx}-${si}`]}/>
@@ -1899,7 +1906,7 @@ function App(){
 
             {/* Add session */}
             <button onClick={()=>setShowAddSession(true)} style={{width:"100%",padding:"11px 0",background:"var(--card)",border:`1px dashed var(--border)`,borderRadius:10,color:"var(--dim)",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:10,letterSpacing:2,marginBottom:16}}>
-              + ADD SESSION TO {dayData.label.toUpperCase()}
+              + ADD SESSION
             </button>
 
             {/* ── NUTRITION (inline below sessions) ── */}
