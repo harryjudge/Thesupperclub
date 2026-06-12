@@ -144,52 +144,84 @@ const COOLDOWN={
 };
 
 // ── RACE DAY CHECKLIST ─────────────────────────────────────────────
-const RACE_CHECKLIST=[
-  {section:"48 HOURS BEFORE",items:[
-    "Carb load — pasta/rice dinner Thursday and Friday",
-    "Hydrate consistently — urine pale yellow",
-    "Sleep 8+ hrs Thursday night — most important night",
-    "Lay out all kit Saturday evening",
-    "Charge GPS watch",
-    "No new foods, no alcohol",
-  ]},
-  {section:"MORNING OF",items:[
-    "Wake up 2.5 hrs before start",
-    "Big oat porridge (100g) + banana + honey + black coffee",
-    "Sip water steadily — don't overdrink",
-    "Kit check: vest, shorts, socks, shoes (no new kit)",
-    "Foam roll quads and calves 5 min",
-  ]},
-  {section:"WARM-UP (20 MIN BEFORE)",items:[
-    "10 min easy jog @ 6:00/km",
-    "3 × 20s strides — build to race pace",
-    "Hip flexor lunge 30s each",
-    "High knees + butt kicks 30s each",
-    "Stand still, breathe, visualise first km",
-  ]},
-  {section:"PACING STRATEGY",items:[
-    "Target: sub-23:00 (4:33–4:38/km average)",
-    "Km 1: 4:38 — go out controlled, feel good",
-    "Km 2: 4:35 — find rhythm, settle breathing",
-    "Km 3: 4:33 — this is where it gets honest",
-    "Km 4: 4:30 — push if you have it, hold form",
-    "Km 5: everything left — lean forward and go",
-  ]},
-  {section:"POST RACE",items:[
-    "10 min easy walk — do not stop dead",
-    "Eat within 30 min — banana + protein shake",
-    "Record your time and how each km felt",
-    "Full post-run mobility routine",
-    "Log result in the app — compare to Week 1",
-  ]},
-];
+function getRaceChecklist(goal="5K"){
+  const warmupTime=goal==="5K"||goal==="10K"?"20 MIN":"30 MIN";
+  const warmupDetails=goal==="FM"?
+    ["20 min easy jog","5x20s strides","Hip flexor + calf stretches","15 min before gun: be at start line, calm"]:
+    ["10 min easy jog @ easy pace","3 × 20s strides — build to race pace","Hip flexor lunge 30s each","High knees + butt kicks 30s each","Stand still, breathe, visualise first km"];
+  const carbDays=goal==="FM"?"Wednesday, Thursday and Friday":goal==="HM"?"Thursday and Friday":"Friday";
+  return[
+    {section:"48 HOURS BEFORE",items:[
+      `Carb load — pasta/rice dinner ${carbDays}`,
+      "Hydrate consistently — urine pale yellow",
+      "Sleep 8+ hrs the night before — most important night",
+      "Lay out all kit the evening before",
+      "Charge GPS watch",
+      "No new foods, no alcohol",
+      ...(goal==="FM"?["Write your pacing bands on your arm or wrist"]:[]),
+    ]},
+    {section:"MORNING OF",items:[
+      goal==="FM"?"Wake up 3+ hrs before start":"Wake up 2.5 hrs before start",
+      "Big oat porridge (100g) + banana + honey + black coffee",
+      "Sip water steadily — don't overdrink",
+      "Kit check: vest, shorts, socks, shoes (no new kit)",
+      "Foam roll quads and calves 5 min",
+      ...(goal==="FM"||goal==="HM"?["Pack gels/fuel for during the race"]:[]),
+    ]},
+    {section:`WARM-UP (${warmupTime} BEFORE)`,items:warmupDetails},
+    {section:"PACING STRATEGY",items:[
+      ...GOAL_CONFIGS[goal].racePacing,
+    ]},
+    {section:"POST RACE",items:[
+      "10 min easy walk — do not stop dead",
+      "Eat within 30 min — banana + protein",
+      "Record your time and how each segment felt",
+      "Full post-run mobility routine",
+      "Log result in the app",
+    ]},
+  ];
+}
 
 // ── POST-PLAN GUIDE ────────────────────────────────────────────────
+// Goal-aware post-plan targets — keyed by [goal][bucket]
 const POST_PLAN_TARGETS={
-  "Sub 23:00":{easy:"6:05–6:20",tempo:"5:05–5:10",reps:"4:25–4:28",tenK:"4:44",nextGoal:"Sub 22:00 in 12 weeks"},
-  "Sub 22:00":{easy:"5:55–6:10",tempo:"4:55–5:05",reps:"4:18–4:22",tenK:"4:36",nextGoal:"Sub 21:00 in 16 weeks"},
-  "Sub 21:00":{easy:"5:45–6:00",tempo:"4:45–4:55",reps:"4:08–4:12",tenK:"4:26",nextGoal:"Sub 20:00 — elite territory"},
+  "5K":{
+    "Sub 23:00":{easy:"6:05–6:20",tempo:"5:05–5:10",reps:"4:25–4:28",race:"4:33–4:38/km",nextGoal:"Sub 22:00 in 12 weeks"},
+    "Sub 22:00":{easy:"5:55–6:10",tempo:"4:55–5:05",reps:"4:18–4:22",race:"4:24–4:28/km",nextGoal:"Sub 21:00 in 16 weeks"},
+    "Sub 21:00":{easy:"5:45–6:00",tempo:"4:45–4:55",reps:"4:08–4:12",race:"4:12–4:16/km",nextGoal:"Sub 20:00 — elite territory"},
+  },
+  "10K":{
+    "Sub 50:00":{easy:"6:15–6:30",tempo:"5:15–5:25",reps:"4:38–4:42",race:"4:45–4:52/km",nextGoal:"Sub 48:00 in 12 weeks"},
+    "Sub 48:00":{easy:"6:05–6:20",tempo:"5:05–5:15",reps:"4:28–4:33",race:"4:36–4:42/km",nextGoal:"Sub 45:00 in 16 weeks"},
+    "Sub 45:00":{easy:"5:55–6:10",tempo:"4:55–5:05",reps:"4:18–4:22",race:"4:18–4:24/km",nextGoal:"Sub 42:00 — strong amateur territory"},
+  },
+  "HM":{
+    "Sub 2:00":{easy:"6:30–6:45",tempo:"5:30–5:40",reps:"4:55–5:00",race:"5:40–5:45/km",nextGoal:"Sub 1:55 in 16 weeks"},
+    "Sub 1:55":{easy:"6:15–6:30",tempo:"5:15–5:25",reps:"4:42–4:48",race:"5:27–5:32/km",nextGoal:"Sub 1:50 in 16 weeks"},
+    "Sub 1:50":{easy:"6:05–6:20",tempo:"5:05–5:15",reps:"4:30–4:35",race:"5:12–5:18/km",nextGoal:"Sub 1:45 — competitive territory"},
+  },
+  "FM":{
+    "Sub 4:30":{easy:"6:45–7:00",tempo:"5:50–6:00",reps:"5:15–5:20",race:"6:24/km",nextGoal:"Sub 4:15 in 16 weeks"},
+    "Sub 4:00":{easy:"6:20–6:35",tempo:"5:20–5:35",reps:"4:50–4:55",race:"5:41/km",nextGoal:"Sub 3:45 in 20 weeks"},
+    "Sub 3:30":{easy:"5:55–6:10",tempo:"5:00–5:10",reps:"4:28–4:33",race:"4:58/km",nextGoal:"Sub 3:15 — serious marathon territory"},
+  },
 };
+
+function getPostPlanBucket(timeStr, goal){
+  if(!timeStr) return null;
+  const parts=timeStr.split(":").map(Number);
+  let secs=0;
+  if(parts.length===3) secs=parts[0]*3600+parts[1]*60+parts[2];
+  else if(parts.length===2) secs=parts[0]*60+parts[1];
+  const buckets=Object.keys(POST_PLAN_TARGETS[goal]||POST_PLAN_TARGETS["5K"]);
+  // Find first bucket the time beats
+  for(const b of buckets){
+    const [h,m,s]=b.replace("Sub ","").split(":").map(Number);
+    const bSecs=s!=null?h*3600+m*60+s:h*60+m;
+    if(secs<bSecs) return b;
+  }
+  return buckets[buckets.length-1];
+}
 
 // ── WEIGHT CALCULATOR ──────────────────────────────────────────────
 function weights(p,isDeload){
@@ -283,35 +315,150 @@ function applyPacesToDetails(details, paces){
 //  Wk 11   TAPER:   2 hard runs (Mon intervals + Fri tune-up), reduced vol
 //  Wk 12   RACE:    1 run (Fri tune-up), shakeout Sat, 5K Sun
 
-function wkPhase(wk){
-  if(wk<=3) return"base";
-  if(wk===4) return"deload";
-  if(wk<=6) return"build";
-  if(wk===7) return"build2";
-  if(wk===8) return"deload";
-  if(wk<=10) return"sharpen";
-  if(wk===11) return"taper";
-  return"race";
+// Scale nutrition macros by body weight (reference: 76kg)
+function scaleNutrition(meals, bw=76){
+  const factor=bw/76;
+  return meals.map(m=>({
+    ...m,
+    pro:Math.round(m.pro*factor),
+    carb:Math.round(m.carb*factor),
+    fat:Math.round(m.fat*factor),
+  }));
 }
 
-// Gym shape: which gym sessions appear as doubles
-// Kept independent of run intensity — gym provides strength not cardio stress
-const WSHAPE={
-  1: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:0},
-  2: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:1},
-  3: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:0,friGym:0},
-  4: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:0},  // deload: no gym doubles
-  5: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:0,friGym:1},
-  6: {monGym:0,tueB:1,tueSw:1,wedGym:1,thuSw:0,friGym:0},
-  7: {monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:1},
-  8: {monGym:0,tueB:0,tueSw:1,wedGym:0,thuSw:0,friGym:0},  // deload: minimal
-  9: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuSw:0,friGym:1},
-  10:{monGym:0,tueB:1,tueSw:0,wedGym:1,thuSw:1,friGym:1},
-  11:{monGym:1,tueB:1,tueSw:0,wedGym:0,thuSw:1,friGym:0},  // taper: reduce gym
-  12:{monGym:0,tueB:1,tueSw:0,wedGym:0,thuSw:0,friGym:0},  // race: minimal
+
+const GOAL_CONFIGS={
+  "5K":{
+    label:"5K",icon:"⚡",color:"#FF4747",
+    peakLongMin:90,
+    longProgression:[55,65,70,50,75,80,85,55,90,90,65,25],
+    speedBias:"high",        // lots of 400m reps, some tempo
+    racePaceKey:"fiveK",
+    tuneUpPaceKey:"fiveK",
+    raceLabel:"5K Time Trial",
+    raceSunDetails:["10 min easy warm-up + 3 strides","5K ALL OUT — give everything","10 min easy cool-down","Compare to where you started 12 weeks ago"],
+    racePacing:["Km 1: controlled — 4:38 target","Km 2: find rhythm — 4:35","Km 3: this is where it gets honest — 4:33","Km 4: push if you have it — 4:30","Km 5: everything left — lean and go"],
+    taperWeeks:1,
+    hmPhaseWeeks:0,
+  },
+  "10K":{
+    label:"10K",icon:"🔟",color:"#FF8C47",
+    peakLongMin:110,
+    longProgression:[60,70,80,55,85,90,100,60,105,110,75,30],
+    speedBias:"mixed",       // mix of 400m reps and 1K reps, tempo
+    racePaceKey:"tenK",
+    tuneUpPaceKey:"tenK",
+    raceLabel:"10K Race",
+    raceSunDetails:["15 min easy warm-up + 3 strides","10K ALL OUT — trust the training","10 min easy cool-down","Negative split if possible"],
+    racePacing:["Km 1-2: settle in — just below target pace","Km 3-5: find rhythm — lock on","Km 6-8: this is where races are won","Km 9-10: everything left"],
+    taperWeeks:1,
+    hmPhaseWeeks:0,
+  },
+  "HM":{
+    label:"Half Marathon",icon:"🏃",color:"#47C8FF",
+    peakLongMin:140,
+    longProgression:[65,75,85,55,95,105,115,65,125,140,100,40],
+    speedBias:"medium",      // tempo dominates, some 1K reps, less 400m
+    racePaceKey:"hmPace",
+    tuneUpPaceKey:"hmPace",
+    raceLabel:"Half Marathon",
+    raceSunDetails:["20 min easy warm-up","Half Marathon — first 5km at goal pace feeling easy","Hold rhythm through 10-15km","Last 5km: dig in","10 min easy cool-down"],
+    racePacing:["Km 1-3: hold back — should feel easy","Km 4-10: locked on goal pace","Km 11-16: this is where HM is decided","Km 17-21: everything left — lean forward"],
+    taperWeeks:2,
+    hmPhaseWeeks:0,
+  },
+  "FM":{
+    label:"Full Marathon",icon:"🏅",color:"#47FFB8",
+    peakLongMin:190,
+    longProgression:[70,85,95,60,105,120,130,70,150,170,120,45],
+    speedBias:"low",         // mostly easy + tempo, long runs are everything
+    racePaceKey:"marathon",
+    tuneUpPaceKey:"marathon",
+    raceLabel:"Full Marathon",
+    raceSunDetails:["20 min easy warm-up","Full Marathon — first half should feel comfortable","Marathon pace through 30km","Last 12km: survive and push","10 min walk cool-down"],
+    racePacing:["Km 1-10: hold back — you will feel amazing, ignore it","Km 11-25: goal pace — patient, patient, patient","Km 26-35: the real race starts here","Km 36-42: everything you have left"],
+    taperWeeks:3,
+    hmPhaseWeeks:0,
+  },
+  "MAINTENANCE":{
+    label:"Maintenance",icon:"🔁",color:"#aaaaaa",
+    peakLongMin:90,
+    longProgression:[60,65,70,55,70,75,80,55,80,85,85,80],
+    speedBias:"low",
+    racePaceKey:"tempo",
+    tuneUpPaceKey:"tempo",
+    raceLabel:"Fitness Review",
+    raceSunDetails:["30 min easy run — no pressure","Reflect on how the 12 weeks felt","Note what improved, what to work on","Set a new goal for your next block"],
+    racePacing:["No race today — this is a check-in week","Optional: 20 min at tempo effort as a fitness benchmark","Otherwise enjoy an easy run","Plan your next 12 weeks"],
+    taperWeeks:0,
+    hmPhaseWeeks:0,
+  },
 };
 
-// ── DYNAMIC PACE COMPUTATION ───────────────────────────────────────
+// ── PACE DERIVATION FROM RACE TIME ──────────────────────────────────
+// Given a recent race time string "mm:ss" or "h:mm:ss" for a given distance,
+// back-calculate equivalent easy pace using vDot-style factors
+function raceTimeToEasySecs(timeStr, distanceKm){
+  if(!timeStr||!distanceKm)return 360; // default 6:00/km
+  const parts=timeStr.split(":").map(Number);
+  let totalSecs=0;
+  if(parts.length===3) totalSecs=parts[0]*3600+parts[1]*60+parts[2];
+  else if(parts.length===2) totalSecs=parts[0]*60+parts[1];
+  else return 360;
+  const racePaceSecsPerKm=totalSecs/distanceKm;
+  // Easy pace is roughly 1.35-1.40x race pace for 5K-10K, more for marathon
+  const factors={"5K":1.38,"10K":1.35,"HM":1.32,"FM":1.28};
+  // we'll just use distance to pick factor
+  let factor=1.35;
+  if(distanceKm<=5.5)factor=1.38;
+  else if(distanceKm<=10.5)factor=1.35;
+  else if(distanceKm<=21.5)factor=1.32;
+  else factor=1.28;
+  return Math.round(racePaceSecsPerKm*factor);
+}
+
+const GOAL_DISTANCES={"5K":5,"10K":10,"HM":21.1,"FM":42.2};
+
+// ── PHASE LOGIC (goal-aware) ─────────────────────────────────────────
+function wkPhase(wk, goal="5K"){
+  const cfg=GOAL_CONFIGS[goal]||GOAL_CONFIGS["5K"];
+  // Maintenance: no taper or race, just consistent build/maintain cycles
+  if(goal==="MAINTENANCE"){
+    if(wk===4||wk===8||wk===12)return"deload";
+    if(wk<=3)return"base";
+    if(wk<=7)return"build";
+    return"sharpen";
+  }
+  const tw=cfg.taperWeeks;
+  if(wk<=3)return"base";
+  if(wk===4)return"deload";
+  if(wk<=7)return"build";
+  if(wk===8)return"deload";
+  const remaining=12-wk;
+  if(remaining===0)return"race";
+  if(remaining<tw)return"taper";
+  return"sharpen";
+}
+
+// ── WSHAPE (unchanged) ───────────────────────────────────────────────
+const WSHAPE={
+  // Every non-deload week has tueB+thuB (max 2 bike) and tueSw+thuSw (max 2 swim)
+  // Sliders cut these down — WSHAPE defines the maximum available
+  1: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:0},
+  2: {monGym:0,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:1},
+  3: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:0},
+  4: {monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:1,friGym:0},  // deload — minimal
+  5: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:1},
+  6: {monGym:0,tueB:1,tueSw:1,wedGym:1,thuB:1,thuSw:1,friGym:0},
+  7: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:1},
+  8: {monGym:0,tueB:0,tueSw:1,wedGym:0,thuB:0,thuSw:0,friGym:0},  // deload — minimal
+  9: {monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:1},
+  10:{monGym:0,tueB:1,tueSw:1,wedGym:1,thuB:1,thuSw:1,friGym:1},
+  11:{monGym:1,tueB:1,tueSw:1,wedGym:0,thuB:1,thuSw:1,friGym:0},
+  12:{monGym:0,tueB:1,tueSw:0,wedGym:0,thuB:0,thuSw:0,friGym:0},  // race week — easy
+};
+
+// ── DYNAMIC PACE COMPUTATION ─────────────────────────────────────────
 function computePaces(easySecsPerKm){
   const e=easySecsPerKm;
   const tempo   =Math.round(e*0.855);
@@ -336,32 +483,43 @@ function computePaces(easySecsPerKm){
 
 const minsToKm=(mins,paceSecs=360)=>Math.round((mins/(paceSecs/60))*10)/10;
 
-function makeWeek(wk){
-  const ph=wkPhase(wk);
+// ── MAKE WEEK (goal-aware) ───────────────────────────────────────────
+function makeWeek(wk, goal="5K"){
+  const cfg=GOAL_CONFIGS[goal]||GOAL_CONFIGS["5K"];
+  const ph=wkPhase(wk,goal);
   const isDeload=ph==="deload";
   const isTaper=ph==="taper";
   const isPeak=ph==="race";
   const sh=WSHAPE[wk]||WSHAPE[1];
 
-  // Weight progression: base p=1, build p=2, sharpen p=3, deload/taper back off
   const wp=isDeload||isTaper?1:wk<=3?1:wk<=7?2:3;
   const W=weights(wp,isDeload);
 
-  // Long run: build gradually, drop in deloads and taper
-  const longMin=isDeload?50:isPeak?25:isTaper?65:wk<=3?70:wk<=6?80:wk<=7?90:wk<=10?95:75;
-  const longKm=minsToKm(longMin,360); // rendered value overridden by pace slider at display time
+  // Long run from goal progression table
+  const longMin=cfg.longProgression[wk-1]||60;
+  const longKm=minsToKm(longMin,360);
 
-  // Hard session params — only used in weeks that have them
+  // Hard session params — scale with goal
   const intReps=wk<=3?6:wk<=6?8:wk<=10?10:8;
-  const tempoMin=wk<=6?20:wk<=10?28:24;
+  const tempoMin=goal==="FM"?wk<=6?25:wk<=10?35:28:wk<=6?20:wk<=10?28:24;
   const kReps=wk<=7?5:wk<=10?7:5;
   const swimDist=isDeload?"easy 800m":wk<=3?"4x200m":wk<=7?"4x300m":"4x400m";
   const bikeZ2=isDeload?40:wk<=3?55:wk<=7?70:85;
-  const bikeTmp=isDeload?35:wk<=3?45:wk<=7?55:65;
   const hpc=wp===1?"3x4":wp===2?"4x4":"4x5";
   const n2=nutrition.doubleAM,n1=nutrition.singleAM;
 
-  // ── EASY RUN (used on non-hard days and deload weeks) ─────────────
+  // Speed work character depends on goal
+  // FM: no 400m reps (too short), tempo + MP runs instead
+  // HM: some 400m, more tempo + 1K
+  // 10K: mix of all
+  // 5K: 400m reps dominate
+  const use400m=goal==="5K"||goal==="10K"||goal==="MAINTENANCE";
+  const isMaintenance=goal==="MAINTENANCE";
+  // Maintenance: speed work every other week only (odd weeks), easy otherwise
+  const maintenanceHardWeek=isMaintenance&&(wk%2===1);
+  const racePaceKey=cfg.racePaceKey;
+  const tuneUpKey=cfg.tuneUpPaceKey;
+
   const easyRun=(dur,slot="AM",time="06:30")=>({
     slot,time,type:"run",preRun:true,
     title:"Easy Run",duration:dur,
@@ -370,63 +528,62 @@ function makeWeek(wk){
     rpe:4
   });
 
-  // ── MON: Hard session — 400m intervals (Base+) or easy strides (Deload) ──
+  // MON: 400m intervals (speed-biased goals), occasional for maintenance, tempo for FM/HM
   const monRun=isDeload||isTaper||isPeak?{
     slot:"AM",time:"06:30",type:"run",preRun:true,
-    title:isPeak?"Easy Run":isTaper?"Easy Run + Strides":"Easy Strides",duration:isPeak?"25 min":isTaper?"35 min":"30 min",
+    title:isPeak?"Easy Run":isTaper?"Easy Run + Strides":"Easy Strides",
+    duration:isPeak?"25 min":isTaper?"35 min":"30 min",
     paceKeys:["easy"],cooldown:"easy",mobility:"postRun",
     details:isPeak?["25 min easy — protect the legs before the race","Stay fully conversational — this is not a workout","Just get the blood moving"]
       :["20 min easy @ easy pace","5x20s relaxed strides — feel fast, not forced","Full walk recovery between strides","Legs should feel good — don't push it"],
     rpe:isPeak?3:4
-  }:{
+  }:isMaintenance&&!maintenanceHardWeek?
+    easyRun("40 min")
+  :use400m?{
     slot:"AM",time:"06:30",type:"run",preRun:true,
-    title:"Track 400m Intervals",duration:"50 min",
+    title:isMaintenance?"Speed Intervals":"Track 400m Intervals",duration:"50 min",
     paceKeys:["easy","reps400"],cooldown:"intervals",mobility:"postRun",
-    details:[
-      "Warm-up: 10 min easy @ easy pace + drills",
-      "Main: "+intReps+"x400m @ rep pace (85-90s rest between)",
-      "Cool-down: 10 min easy",
-      "Cue: quick turnover, tall hips — don't tense up",
-      "Negative split the reps where possible"
-    ],
-    rpe:8
+    details:isMaintenance?
+      ["Warm-up: 10 min easy + drills","Main: "+Math.max(4,intReps-2)+"x400m @ rep pace (90s rest)","Cool-down: 10 min easy","Just enough to keep the legs sharp — not a race build","This is your only hard session this week"]
+      :["Warm-up: 10 min easy + drills","Main: "+intReps+"x400m @ rep pace (85-90s rest)","Cool-down: 10 min easy","Cue: quick turnover, tall hips — don't tense up"],
+    rpe:isMaintenance?6:8
+  }:{
+    // FM/HM: replace 400m with longer tempo on Monday
+    slot:"AM",time:"06:30",type:"run",preRun:true,
+    title:"Marathon Pace Run",duration:"50 min",
+    paceKeys:["easy","marathon"],cooldown:"tempo",mobility:"postRun",
+    details:["Warm-up: 10 min easy","Main: "+Math.round(tempoMin*0.9)+" min @ marathon pace","Cool-down: 10 min easy","Cue: smooth, relaxed — this should feel sustainable"],
+    rpe:7
   };
 
   const monGym={slot:"PM",time:"19:00",type:"gym",preRun:false,
     title:"Lower Power + Speed Transfer",duration:isDeload?"35 min":"55 min",
     paceKeys:[],cooldown:"gym",mobility:"postGym",
-    details:isDeload?["Trap bar deadlift 3x3 @ "+W.trapDL+" — easy, technique focus","Box jump 3x4 — bodyweight","Core 10 min","10 min sauna"]
-      :["Trap bar deadlift 4x4 @ "+W.trapDL+" — explosive up, controlled down","Single-leg box jump 4x5 each — bodyweight","Bulgarian split squat 3x8 @ "+W.splitSquat+" total","Nordic hamstring curl 3x6 — "+W.nordics,"Copenhagen plank 3x20s each — bodyweight","Dead bug 3x10","10 min sauna"],
+    details:isDeload?["Trap bar deadlift 3x3 @ "+W.trapDL+" — technique focus","Box jump 3x4 — bodyweight","Core 10 min","10 min sauna"]
+      :["Trap bar deadlift 4x4 @ "+W.trapDL+" — explosive","Single-leg box jump 4x5 each","Bulgarian split squat 3x8 @ "+W.splitSquat,"Nordic hamstring curl 3x6 — "+W.nordics,"Copenhagen plank 3x20s — bodyweight","Dead bug 3x10","10 min sauna"],
     gymExercises:isDeload?[]:["Trap bar deadlift","Bulgarian split squat","Nordic curl"],rpe:isDeload?4:7};
 
-  // ── TUE: Bike (aerobic cross-training) ───────────────────────────
   const tueBike={slot:"AM",time:"06:30",type:"cycle",preRun:false,
     title:isDeload?"Easy Spin":"Zone 2 Bike",duration:isDeload?"35 min":bikeZ2+" min",
     paceKeys:[],cooldown:"easy",mobility:null,
-    details:isDeload?["Pure easy spin — 55-65% max HR","Cadence 85-90 rpm","Flush the legs from Monday"]
-      :["Zone 2 — 60-70% max HR throughout","Aerobic base building without run impact","Cadence 85-95 rpm","If you're breathing hard, ease off"],
+    details:isDeload?["Pure easy spin — 55-65% max HR","Cadence 85-90 rpm","Flush legs from Monday"]
+      :["Zone 2 — 60-70% max HR","Aerobic base without run impact","Cadence 85-95 rpm","If breathing hard, ease off"],
     rpe:isDeload?3:4};
 
   const tueSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
     title:"Steady Swim",duration:isDeload?"25 min":"40 min",
     paceKeys:[],cooldown:"swim",mobility:null,
-    details:isDeload?["600m easy mixed stroke","Focus on breathing rhythm only"]
-      :["300m warm-up",swimDist+" freestyle @ 65-70% effort, 30s rest","200m cool-down","High elbow catch — don't push water down"],
+    details:isDeload?["600m easy mixed stroke","Focus on breathing rhythm"]
+      :["300m warm-up",swimDist+" @ 65-70% effort, 30s rest","200m cool-down","High elbow catch"],
     rpe:isDeload?3:5};
 
-  // ── WED: Hard (tempo) in build/sharpen, easy in base/deload/taper ──
-  const hardWed=ph==="build"||ph==="sharpen";
+  // WED: tempo for build/sharpen (race goals only) — maintenance always easy
+  const hardWed=!isMaintenance&&(ph==="build"||ph==="sharpen");
   const wedRun=(!hardWed)?easyRun(isDeload?"25 min":"35 min"):{
     slot:"AM",time:"06:30",type:"run",preRun:true,
     title:"Tempo Run",duration:"45 min",
     paceKeys:["easy","tempo"],cooldown:"tempo",mobility:"postRun",
-    details:[
-      "Warm-up: 10 min easy @ easy pace",
-      "Main: "+tempoMin+" min @ tempo pace — comfortably hard",
-      "Cool-down: 10 min easy",
-      "Cue: tall posture, forward lean from the ankles",
-      "You should be able to say a few words but not have a conversation"
-    ],
+    details:["Warm-up: 10 min easy","Main: "+tempoMin+" min @ tempo pace — comfortably hard","Cool-down: 10 min easy","You should be able to say a few words but not a sentence"],
     rpe:7
   };
 
@@ -434,33 +591,32 @@ function makeWeek(wk){
     title:"Upper Power + Rotational",duration:isDeload?"35 min":"55 min",
     paceKeys:[],cooldown:"gym",mobility:"postGym",
     details:isDeload?["Hang power clean 3x3 @ "+W.powerClean,"Pull-up 3x5 — "+W.pullUp,"Core 10 min","15 min steam room"]
-      :["Hang power clean "+hpc+" @ "+W.powerClean+" — triple extension = speed","Weighted pull-up 4x5 — "+W.pullUp,"Single-arm DB row 3x10 each @ "+W.dbRow,"Landmine rotational press 3x8 each @ "+W.landmine,"Pallof press 3x12 each side @ "+W.pallof,"Hollow body hold 3x30s","15 min steam room"],
+      :["Hang power clean "+hpc+" @ "+W.powerClean,"Weighted pull-up 4x5 — "+W.pullUp,"Single-arm DB row 3x10 each @ "+W.dbRow,"Landmine press 3x8 each @ "+W.landmine,"Pallof press 3x12 each side @ "+W.pallof,"Hollow body hold 3x30s","15 min steam room"],
     gymExercises:isDeload?[]:["Hang power clean","Weighted pull-up","Single-arm DB row","Landmine press"],rpe:isDeload?4:7};
 
-  // ── THU: Always aerobic recovery ─────────────────────────────────
-  const thuRun=easyRun(isDeload||isPeak?"20 min":isTaper?"30 min":"40 min");
+  const thuRun=easyRun(isDeload||isPeak?"20 min":isTaper?"30 min":goal==="FM"?"50 min":"40 min");
   const thuSw={slot:"PM",time:"19:00",type:"swim",preRun:false,
     title:"Recovery Swim",duration:"30 min",
     paceKeys:[],cooldown:"swim",mobility:null,
-    details:["600m-800m easy — no targets","Flush the legs, loosen shoulders","10 min poolside hip flexor + thoracic mobility","Sauna 10 min if available"],rpe:2};
+    details:["600-800m easy — no targets","Flush legs, loosen shoulders","10 min poolside mobility","Sauna 10 min"],rpe:2};
 
-  // ── FRI: Hard (1K reps or tune-up) in build2/sharpen/race, easy otherwise ──
-  const hardFri=ph==="build2"||ph==="sharpen"||ph==="taper"||ph==="race";
+  // FRI: goal-specific speed work — maintenance always easy
+  const hardFri=!isMaintenance&&(ph==="build2"||ph==="sharpen"||ph==="taper"||ph==="race");
+  // build2 is wk 7 for 5K/10K; for FM/HM it's still a hard day but longer efforts
   const friRun=(!hardFri)?easyRun(isDeload?"25 min":"35 min"):{
     slot:"AM",time:"06:30",type:"run",preRun:true,
-    title:isPeak?"Race Pace Tune-Up":isTaper?"Tune-Up 1K Reps":"1K Repeats",
+    title:isPeak?"Race Pace Tune-Up":isTaper?"Tune-Up Reps":
+      (goal==="FM"||goal==="HM")?"Race Pace Cruise":"1K Repeats",
     duration:isPeak?"35 min":isTaper?"40 min":"50 min",
-    paceKeys:isPeak?["easy","fiveK"]:["easy","tenK"],cooldown:"intervals",mobility:"postRun",
+    paceKeys:isPeak?["easy",racePaceKey]:["easy",goal==="FM"?"marathon":goal==="HM"?"hmPace":"tenK"],
+    cooldown:"intervals",mobility:"postRun",
     details:isPeak?
-      ["10 min easy warm-up","3x1K @ 5K pace — feel sharp, not blown out","10 min easy cool-down","Legs should feel fast — trust the taper"]
+      ["10 min easy warm-up","3x1K @ "+cfg.label+" pace — feel sharp","10 min easy cool-down","Trust the taper — legs should feel quick"]
       :isTaper?
-      ["10 min easy warm-up","4x1K @ 10K pace (2 min rest)","10 min easy cool-down","Last hard session before race week — make it count"]
-      :[
-        "Warm-up: 10 min easy + drills",
-        "Main: "+kReps+"x1000m @ 10K pace (90s-2 min rest)",
-        "Cool-down: 10 min easy",
-        "Hold form in final reps — don't blow up early"
-      ],
+      ["10 min easy warm-up","4x1K @ race pace (90s rest)","10 min easy cool-down","Last hard session before race week"]
+      :(goal==="FM"||goal==="HM")?
+      ["Warm-up: 10 min easy","Main: "+kReps+"x1600m @ race pace (90s rest)","Cool-down: 10 min easy","Longer efforts build race-specific endurance"]
+      :["Warm-up: 10 min easy + drills","Main: "+kReps+"x1000m @ 10K pace (90s rest)","Cool-down: 10 min easy","Hold form in final reps"],
     rpe:isPeak?7:isTaper?7:8
   };
 
@@ -468,66 +624,73 @@ function makeWeek(wk){
     title:"Glute & Hip Drive",duration:isDeload?"30 min":"50 min",
     paceKeys:[],cooldown:"gym",mobility:"postGym",
     details:isDeload?["Hip thrust 3x6 @ "+W.hipThrust,"Step-up 3x6 each @ "+W.stepUp+"/hand","Band work 10 min"]
-      :["Barbell hip thrust 4x8 @ "+W.hipThrust+" — full contraction at top","Depth jump to 10m sprint 4x"+(wp===1?3:4)+" — reactive","Step-up + knee drive 3x10 each @ "+W.stepUp+"/hand","Lateral band walk 3x20 each direction","Farmer carry 3x30m @ "+W.farmerCarry+"/hand","Side plank + hip abduction 3x15 each"],
+      :["Barbell hip thrust 4x8 @ "+W.hipThrust+" — full contraction","Depth jump to 10m sprint 4x"+(wp===1?3:4),"Step-up + knee drive 3x10 each @ "+W.stepUp+"/hand","Lateral band walk 3x20","Farmer carry 3x30m @ "+W.farmerCarry+"/hand","Side plank + hip abduction 3x15"],
     gymExercises:isDeload?[]:["Barbell hip thrust","Step-up","Farmer carry"],rpe:isDeload?3:7};
 
   const restDay={slot:"-",time:"-",type:"rest",preRun:false,title:"Active Recovery",duration:"-",
     paceKeys:[],cooldown:null,mobility:null,
-    details:["Light walk or complete rest","Foam roll — quads, calves, glutes 10 min","10-15 min sauna if available"],rpe:1};
+    details:["Light walk or complete rest","Foam roll — quads, calves, glutes 10 min","10-15 min sauna"],rpe:1};
 
-  // ── BUILD DAY SESSIONS ────────────────────────────────────────────
+  const thuBike={slot:"AM",time:"06:30",type:"cycle",preRun:false,
+    title:"Zone 2 Bike",duration:isDeload?"35 min":bikeZ2+" min",
+    paceKeys:[],cooldown:"easy",mobility:null,
+    details:isDeload?["Pure Zone 2 — 55-65% max HR","Flush legs, active recovery"]
+      :["Zone 2 — 60-70% max HR","Aerobic base without run impact","Cadence 85-95 rpm","If breathing hard, ease off"],
+    rpe:isDeload?3:4};
+
   const monS=[monRun,...(sh.monGym?[monGym]:[])];
-  const tueS=sh.tueB&&sh.tueSw?[tueBike,tueSw]:sh.tueB?[tueBike]:sh.tueSw?[thuSw]:[restDay];
+  const tueSessions=[...(sh.tueB?[tueBike]:[]),...(sh.tueSw?[tueSw]:[])];
+  const tueS=tueSessions.length?tueSessions:[restDay];
   const wedS=[wedRun,...(sh.wedGym?[wedGym]:[])];
-  const thuS=sh.thuSw?[thuRun,thuSw]:[thuRun];
+  const thuS=[thuRun,...(sh.thuB?[thuBike]:[]),...(sh.thuSw?[thuSw]:[])];
   const friS=[friRun,...(sh.friGym?[friGym]:[])];
 
-  // ── THEMES ────────────────────────────────────────────────────────
-  const hardCount=((!isDeload&&!isTaper)?1:0)+(hardWed?1:0)+(hardFri?1:0);
-  const monTheme=isDeload||isTaper?"Easy + Strides":sh.monGym?"Intervals + Lower Power":"Track Intervals";
+  const monTheme=isDeload||isTaper||isPeak?"Easy + Strides":isMaintenance?(maintenanceHardWeek?(sh.monGym?"Speed + Lower Power":"Speed Intervals"):(sh.monGym?"Easy Run + Lower Power":"Easy Run")):sh.monGym?(use400m?"Intervals + Lower Power":"MP Run + Lower Power"):(use400m?"Track Intervals":"Marathon Pace Run");
   const wedTheme=hardWed?sh.wedGym?"Tempo + Upper Power":"Tempo Run":isDeload?"Easy Run":"Easy Run";
-  const friTheme=hardFri?sh.friGym?"1K Reps + Glute Drive":isPeak?"Race Tune-Up":isTaper?"Tune-Up Reps":"1K Repeats":isDeload?"Easy Run":"Easy Run";
-  const phaseLabel=isDeload?"DELOAD":isPeak?"RACE WEEK":isTaper?"TAPER":ph==="base"?"BASE — aerobic foundation":ph==="build"||ph==="build2"?"BUILD — adding quality":"SHARPEN — peak intensity";
+  const friTheme=hardFri?sh.friGym?"Speed + Glute Drive":isPeak?"Race Tune-Up":isTaper?"Tune-Up Reps":"Speed Endurance":isDeload?"Easy Run":"Easy Run";
+
+  // Long run — race-pace finish for HM/FM only; maintenance and 5K/10K stay easy throughout
+  const longRunDetails=isPeak?["25 min fully easy — shake the legs","Stay loose","Visualise "+cfg.raceLabel+" tomorrow"]
+    :[longMin+" min / ~"+longKm+"km @ easy pace",
+      "Most important session of the week",
+      "Run easy — aerobic gains happen here",
+      isMaintenance?"Keep this fully easy — it's the foundation of your fitness":
+      wk<=3?"Stay easy the whole way":
+      (goal==="HM"||goal==="FM")?
+        (wk<=6?"Last 5-10 min can drift toward marathon pace":wk<=10?"Final 20 min at marathon pace — practice running tired":"Easy throughout — protect the legs in taper"):
+      "Stay easy throughout — consistency over intensity"];
+
+  const longPaceKeys=isPeak?["easy"]:
+    (goal==="FM"||goal==="HM")&&wk>=7?["longRun","marathon"]:["longRun"];
 
   return[
     {day:"MON",label:"Monday",theme:monTheme,nutrition:sh.monGym?n2:n1,sessions:monS},
-    {day:"TUE",label:"Tuesday",theme:sh.tueB?"Zone 2 Bike":"Rest & Recovery",nutrition:sh.tueB?n1:n1,sessions:tueS},
+    {day:"TUE",label:"Tuesday",theme:sh.tueB?"Zone 2 Bike":"Rest & Recovery",nutrition:n1,sessions:tueS},
     {day:"WED",label:"Wednesday",theme:wedTheme,nutrition:sh.wedGym?n2:n1,sessions:wedS},
     {day:"THU",label:"Thursday",theme:sh.thuSw?"Easy Run + Recovery Swim":"Easy Run",nutrition:sh.thuSw?n2:n1,sessions:thuS},
     {day:"FRI",label:"Friday",theme:friTheme,nutrition:sh.friGym?n2:n1,sessions:friS},
-    {day:"SAT",label:"Saturday",theme:isPeak?"Shakeout Run":"Long Run",nutrition:nutrition.longRun,sessions:[
+    {day:"SAT",label:"Saturday",theme:isPeak?"Shakeout":goal==="FM"?"Long Run":"Long Run",nutrition:nutrition.longRun,sessions:[
       {slot:"AM",time:"07:00",type:"run",preRun:true,
        title:isPeak?"Easy Shakeout":"Long Aerobic Run",
        duration:isPeak?"25 min":longMin+" min",
-       paceKeys:isPeak?["easy"]:wk>=9?["longRun","marathon"]:["longRun"],
-       cooldown:isPeak?"easy":"longRun",mobility:"postRun",
+       paceKeys:longPaceKeys,cooldown:isPeak?"easy":"longRun",mobility:"postRun",
        longRunData:isPeak?null:{mins:longMin,km:longKm},
-       details:isPeak?["25 min fully easy — shake the legs","Stay loose, don't race it","Visualise the 5K tomorrow"]
-         :[longMin+" min / ~"+longKm+"km @ easy pace",
-           "This is the most important session of the week",
-           "Run easy — aerobic gains happen here, not in the hurt locker",
-           wk<=3?"Stay easy the whole way — build the engine without burning it":
-           wk<=6?"Last 5-10 min can drift to marathon pace if legs feel good":
-           wk<=10?"Final 15 min at marathon pace — practice running tired":
-           "Keep it easy — you're in taper, protect the legs"],
-       rpe:isPeak?3:isDeload?4:isTaper?4:5}
+       details:longRunDetails,rpe:isPeak?3:isDeload?4:isTaper?4:5}
     ]},
-    {day:"SUN",label:"Sunday",theme:isPeak?"5K TEST DAY":"Full Rest",nutrition:isPeak?nutrition.longRun:nutrition.restDay,sessions:[
+    {day:"SUN",label:"Sunday",theme:isPeak?cfg.raceLabel:"Full Rest",nutrition:isPeak?nutrition.longRun:nutrition.restDay,sessions:[
       {slot:"-",time:"-",type:isPeak?"run":"rest",preRun:isPeak,
-       title:isPeak?"5K Time Trial":"Full Rest",duration:isPeak?"40 min":"-",
-       paceKeys:isPeak?["fiveK"]:[],cooldown:isPeak?"intervals":null,mobility:isPeak?"postRun":null,
-       details:isPeak?["10 min easy warm-up @ easy pace + 3 strides","5K ALL OUT — target sub-23:00","10 min easy cool-down","This is what 12 weeks was for","Compare to where you started"]
-         :["Complete rest — this is when you adapt","Optional 20 min sauna + cold contrast","Sleep 8+ hrs","Prepare mentally for the next week"],
+       title:isPeak?cfg.raceLabel:"Full Rest",duration:isPeak?"—":"-",
+       paceKeys:isPeak?[racePaceKey]:[],cooldown:isPeak?"intervals":null,mobility:isPeak?"postRun":null,
+       details:isPeak?cfg.raceSunDetails
+         :["Complete rest — this is when you adapt","Optional 20 min sauna + cold contrast","Sleep 8+ hrs","Prepare mentally for next week"],
        rpe:isPeak?10:1}
     ]},
   ];
 }
 
-
-
-const weekData=Array.from({length:12},(_,i)=>makeWeek(i+1));
-const TOTAL_SESSIONS=weekData.reduce((a,wk)=>a+wk.reduce((b,d)=>b+d.sessions.length,0),0);
 const sKey=(wk,di,si)=>`${wk}-${di}-${si}`;
+
+
 
 // ── SLIDER COMPONENT ───────────────────────────────────────────────
 function Slider({value,onChange,min=1,max=5,color="#E8FF47",labels}){
@@ -545,6 +708,134 @@ function Slider({value,onChange,min=1,max=5,color="#E8FF47",labels}){
   );
 }
 
+
+// ── GOAL SETUP MODAL ──────────────────────────────────────────────
+function GoalSetupModal({onSave}){
+  const[selectedGoal,setSelectedGoal]=useState("5K");
+  const[raceTime,setRaceTime]=useState("");
+  const[step,setStep]=useState(1); // 1=pick goal, 2=enter time
+
+  const cfg=GOAL_CONFIGS[selectedGoal];
+  const placeholders={"5K":"e.g. 25:30","10K":"e.g. 52:00","HM":"e.g. 1:55:00","FM":"e.g. 4:10:00"};
+  const examples={"5K":"mm:ss","10K":"mm:ss","HM":"h:mm:ss","FM":"h:mm:ss"};
+  const dist=GOAL_DISTANCES[selectedGoal];
+
+  const handleContinue=()=>{
+    const easySecs=raceTime?raceTimeToEasySecs(raceTime,dist):360;
+    onSave({goal:selectedGoal,raceTime,easySecs});
+  };
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{width:"100%",maxWidth:380,animation:"slideIn 0.3s ease"}}>
+
+        {/* Header */}
+        <div style={{textAlign:"center",marginBottom:32}}>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:38,letterSpacing:3,color:"#f0f0f0",lineHeight:1}}>SUPPER CLUB</div>
+          <div style={{fontSize:10,fontFamily:"'DM Mono',monospace",letterSpacing:4,color:"#444",marginTop:6}}>12-WEEK ATHLETE PERFORMANCE PLAN</div>
+        </div>
+
+        {step===1&&(
+          <>
+            <div style={{fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#555",marginBottom:16,textAlign:"center"}}>WHAT ARE YOU TRAINING FOR?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:28}}>
+              {Object.entries(GOAL_CONFIGS).map(([key,g])=>{
+                const isSelected=selectedGoal===key;
+                return(
+                  <button key={key} onClick={()=>setSelectedGoal(key)} style={{
+                    display:"flex",alignItems:"center",gap:14,padding:"14px 18px",
+                    borderRadius:12,cursor:"pointer",textAlign:"left",
+                    background:isSelected?`${g.color}18`:"#111",
+                    border:`2px solid ${isSelected?g.color:"#1e1e1e"}`,
+                    transition:"all 0.15s"
+                  }}>
+                    <span style={{fontSize:24,flexShrink:0}}>{g.icon}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:isSelected?g.color:"#f0f0f0",letterSpacing:1}}>{g.label}</div>
+                      <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#555",marginTop:2,letterSpacing:1}}>
+                        {key==="5K"?"Peak long run ~90 min · Speed-focused":
+                         key==="10K"?"Peak long run ~110 min · Balanced":
+                         key==="HM"?"Peak long run ~140 min · Tempo-focused":
+                         key==="FM"?"Peak long run ~190 min · Endurance-focused":
+                         "Consistent fitness · No race goal · Sustainable"}
+                      </div>
+                    </div>
+                    {isSelected&&<span style={{color:g.color,fontSize:18}}>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={()=>setStep(2)} style={{width:"100%",padding:"14px 0",background:`${cfg.color}`,border:"none",borderRadius:10,color:"#080808",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2}}>
+              NEXT →
+            </button>
+          </>
+        )}
+
+        {step===2&&(
+          <>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
+              <button onClick={()=>setStep(1)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:12}}>← back</button>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:20}}>{cfg.icon}</span>
+                <span style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:cfg.color,letterSpacing:1}}>{cfg.label}</span>
+              </div>
+            </div>
+
+            <div style={{fontSize:11,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#555",marginBottom:16,textAlign:"center"}}>YOUR CURRENT ABILITY</div>
+
+            {selectedGoal==="MAINTENANCE"?(
+              <div style={{background:"#141414",borderRadius:12,padding:"16px",marginBottom:16}}>
+                <div style={{fontSize:10,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>
+                  Maintenance mode builds consistent fitness without a specific race target. You'll get 1-2 quality sessions per week, regular long runs up to 90 min, and a sustainable mix of gym and cross-training.
+                </div>
+                <div style={{marginTop:12,padding:"10px 12px",background:"#aaaaaa15",border:"1px solid #aaaaaa25",borderRadius:8}}>
+                  <div style={{fontSize:9,color:"#aaa",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:4}}>NO RACE TARGET</div>
+                  <div style={{fontSize:11,color:"#888",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>Week 12 is a fitness check-in, not a race. Switch to a race goal at any time using Reset.</div>
+                </div>
+              </div>
+            ):(
+              <div style={{background:"#141414",borderRadius:12,padding:"16px",marginBottom:16}}>
+                <div style={{fontSize:10,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>
+                  RECENT {selectedGoal} TIME (OPTIONAL)
+                </div>
+                <input type="text" placeholder={placeholders[selectedGoal]+" ("+examples[selectedGoal]+")"} value={raceTime} onChange={e=>setRaceTime(e.target.value)}
+                  style={{background:"#1a1a1a",border:`1px solid ${raceTime?"#444":"#2a2a2a"}`,borderRadius:8,color:"#f0f0f0",fontFamily:"'DM Mono',monospace",fontSize:14,padding:"10px 12px",width:"100%",outline:"none"}}/>
+                <div style={{fontSize:10,color:"#444",fontFamily:"'DM Mono',monospace",lineHeight:1.6,marginTop:8}}>
+                  Enter a recent race time and paces calculate automatically. Leave blank to use defaults — adjust later in PACES tab.
+                </div>
+                {raceTime&&(()=>{
+                  const easySecs=raceTimeToEasySecs(raceTime,dist);
+                  const paces=computePaces(easySecs);
+                  if(easySecs<240||easySecs>600)return null;
+                  return(
+                    <div style={{marginTop:12,padding:"10px 12px",background:`${cfg.color}10`,border:`1px solid ${cfg.color}25`,borderRadius:8}}>
+                      <div style={{fontSize:9,color:cfg.color,fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>YOUR TRAINING PACES</div>
+                      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                        {[["Easy",paces.easy.pace,"#47FFB8"],["Tempo",paces.tempo.pace,"#E8FF47"],["Rep",paces.reps400.pace,"#FF4747"]].map(([l,p,col])=>(
+                          <div key={l}>
+                            <div style={{fontSize:8,color:"#555",fontFamily:"'DM Mono',monospace",letterSpacing:1}}>{l.toUpperCase()}</div>
+                            <div style={{fontSize:11,color:col,fontFamily:"'DM Mono',monospace"}}>{p}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            <button onClick={handleContinue} style={{width:"100%",padding:"14px 0",background:selectedGoal==="MAINTENANCE"?"#555":cfg.color,border:"none",borderRadius:10,color:selectedGoal==="MAINTENANCE"?"#f0f0f0":"#080808",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,marginBottom:10}}>
+              {selectedGoal==="MAINTENANCE"?"START MAINTENANCE →":"BUILD MY PLAN →"}
+            </button>
+            <div style={{textAlign:"center",fontSize:9,color:"#333",fontFamily:"'DM Mono',monospace"}}>
+              All of this can be changed later in settings
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── CALENDAR SETUP MODAL ──────────────────────────────────────────
 function CalendarSetupModal({onSave}){
@@ -608,6 +899,116 @@ function CalendarSetupModal({onSave}){
         <button onClick={()=>onSave(selDate.toISOString())} style={{width:"100%",padding:"14px 0",background:"#E8FF47",border:"none",borderRadius:8,color:"#080808",cursor:"pointer",fontFamily:"'Pirata One',cursive",fontSize:18,letterSpacing:2}}>
           START THE PLAN
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ── SETTINGS MODAL ────────────────────────────────────────────────
+function SettingsModal({goal,startDate,bodyWeight,easyPaceSecs,onSave,onClose}){
+  const[selGoal,setSelGoal]=useState(goal||"5K");
+  const[selDate,setSelDate]=useState(startDate?new Date(startDate):new Date());
+  const[bw,setBw]=useState(String(bodyWeight||76));
+  const[pace,setPace]=useState(easyPaceSecs||360);
+  const[calMonth,setCalMonth]=useState(startDate?new Date(new Date(startDate).getFullYear(),new Date(startDate).getMonth(),1):new Date(new Date().getFullYear(),new Date().getMonth(),1));
+
+  const daysInMonth=(y,m)=>new Date(y,m+1,0).getDate();
+  const firstDow=(y,m)=>(new Date(y,m,1).getDay()+6)%7;
+  const y=calMonth.getFullYear(),m=calMonth.getMonth();
+  const cells=[];
+  for(let i=0;i<firstDow(y,m);i++)cells.push(null);
+  for(let d=1;d<=daysInMonth(y,m);d++)cells.push(new Date(y,m,d));
+  const isSel=d=>d&&d.toDateString()===selDate.toDateString();
+  const isMon=d=>d&&d.getDay()===1;
+  const monthName=calMonth.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+  const goalCfg=GOAL_CONFIGS[selGoal]||GOAL_CONFIGS["5K"];
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:2000,display:"flex",alignItems:"flex-end",padding:0}}>
+      <div style={{width:"100%",background:"var(--bg2)",borderRadius:"16px 16px 0 0",padding:24,maxHeight:"90vh",overflowY:"auto",animation:"slideIn 0.25s ease"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div style={{fontFamily:"'Pirata One',cursive",fontSize:24,letterSpacing:2}}>Settings</div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"var(--dim)",cursor:"pointer",fontSize:20,lineHeight:1}}>✕</button>
+        </div>
+
+        {/* Goal */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"var(--dim)",marginBottom:10}}>TRAINING GOAL</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {Object.entries(GOAL_CONFIGS).map(([key,g])=>(
+              <button key={key} onClick={()=>setSelGoal(key)} style={{flex:"1 0 auto",padding:"8px 10px",borderRadius:8,border:`1px solid ${selGoal===key?g.color:"var(--border)"}`,background:selGoal===key?`${g.color}18`:"var(--card)",cursor:"pointer",textAlign:"center"}}>
+                <div style={{fontSize:14}}>{g.icon}</div>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:selGoal===key?g.color:"var(--dim)",marginTop:2,letterSpacing:1}}>{key}</div>
+              </button>
+            ))}
+          </div>
+          {selGoal!==goal&&<div style={{fontSize:10,color:"#FFB347",fontFamily:"'DM Mono',monospace",marginTop:8}}>⚠️ Changing goal regenerates the plan. Your progress and logs are kept.</div>}
+        </div>
+
+        {/* Body weight */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"var(--dim)",marginBottom:8}}>BODY WEIGHT</div>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <input type="text" value={bw} onChange={e=>setBw(e.target.value)} placeholder="e.g. 76" style={{width:80}}/>
+            <span style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace"}}>kg · used for nutrition macro targets</span>
+          </div>
+          {bw&&!isNaN(parseFloat(bw))&&<div style={{marginTop:8,fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>
+            Protein target: {Math.round(parseFloat(bw)*1.8)}g/day · Easy pace macros recalculate automatically
+          </div>}
+        </div>
+
+        {/* Easy pace */}
+        <div style={{marginBottom:20}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+            <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"var(--dim)"}}>EASY PACE</span>
+            <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:"#47FFB8"}}>{Math.floor(pace/60)}:{String(pace%60).padStart(2,"0")}/km</span>
+          </div>
+          <input type="range" min={300} max={480} step={5} value={pace} onChange={e=>setPace(Number(e.target.value))}/>
+          <style>{"input[type=range]::-webkit-slider-thumb{background:#47FFB8}input[type=range]::-moz-range-thumb{background:#47FFB8}"}</style>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:3}}>
+            <span style={{fontSize:9,color:"var(--vdim)",fontFamily:"'DM Mono',monospace"}}>5:00/km</span>
+            <span style={{fontSize:9,color:"var(--vdim)",fontFamily:"'DM Mono',monospace"}}>8:00/km</span>
+          </div>
+        </div>
+
+        {/* Start date */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"var(--dim)",marginBottom:10}}>START DATE (Week 1 Monday)</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()-1,1))} style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,color:"var(--muted)",cursor:"pointer",padding:"4px 12px",fontSize:14}}>‹</button>
+            <span style={{fontFamily:"'Pirata One',cursive",fontSize:14,color:"var(--text)"}}>{monthName}</span>
+            <button onClick={()=>setCalMonth(d=>new Date(d.getFullYear(),d.getMonth()+1,1))} style={{background:"var(--card)",border:`1px solid var(--border)`,borderRadius:6,color:"var(--muted)",cursor:"pointer",padding:"4px 12px",fontSize:14}}>›</button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+            {["M","T","W","T","F","S","S"].map((d,i)=>(
+              <div key={i} style={{textAlign:"center",fontSize:9,color:"var(--vdim)",fontFamily:"'DM Mono',monospace",padding:"3px 0"}}>{d}</div>
+            ))}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+            {cells.map((d,i)=>{
+              const sel=isSel(d),mon=isMon(d);
+              return(
+                <button key={i} onClick={()=>mon&&d&&setSelDate(d)} disabled={!mon||!d} style={{
+                  aspectRatio:"1",borderRadius:6,border:"none",
+                  background:sel?"#E8FF47":mon&&d?"var(--card)":"transparent",
+                  color:sel?"#080808":mon&&d?"var(--text)":d?"var(--vdim)":"transparent",
+                  cursor:mon&&d?"pointer":"default",
+                  fontFamily:"'DM Mono',monospace",fontSize:12,
+                  outline:mon&&d&&!sel?`1px solid var(--border)`:"none",
+                  fontWeight:sel?"600":"400",
+                }}>{d?d.getDate():""}</button>
+              );
+            })}
+          </div>
+          {selDate&&<div style={{marginTop:8,fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>
+            Week 1 starts: {selDate.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+          </div>}
+        </div>
+
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={onClose} style={{flex:1,padding:"12px 0",background:"var(--card)",border:`1px solid var(--border)`,borderRadius:8,color:"var(--dim)",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>CANCEL</button>
+          <button onClick={()=>onSave({goal:selGoal,startDate:selDate.toISOString(),bodyWeight:parseFloat(bw)||76,easyPaceSecs:pace})} style={{flex:2,padding:"12px 0",background:`${goalCfg.color}20`,border:`1px solid ${goalCfg.color}50`,borderRadius:8,color:goalCfg.color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11,letterSpacing:1}}>SAVE SETTINGS</button>
+        </div>
       </div>
     </div>
   );
@@ -774,18 +1175,19 @@ function CooldownPanel({type,color}){
 }
 
 // ── SESSION CARD (collapsible + injury aware) ────────────────────
-function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logData,injuryFlags,paces}){
+function SessionCard({s,sessionKey,checked,isMissed,isPartial,onToggle,onMiss,onPartial,onLog,logData,injuryFlags,paces}){
   const[collapsed,setCollapsed]=useState(true);
   const[tickAnim,setTickAnim]=useState(false);
   const cfg=T[s.type];
-  const cardBg=checked?"#0a140a":isMissed?"#1a0a0a":"var(--card)";
-  const borderCol=checked?"#47FFB8":isMissed?"#FF4747":cfg.color;
+  const cardBg=checked?"#0a140a":isMissed?"#1a0a0a":isPartial?"#1a1505":"var(--card)";
+  const borderCol=checked?"#47FFB8":isMissed?"#FF4747":isPartial?"#FFB347":cfg.color;
+  const isActioned=checked||isMissed||isPartial;
   const injuredZones=Object.entries(injuryFlags||{}).filter(([,v])=>v).map(([k])=>k);
   const hasWarning=injuredZones.some(z=>{const m={"Left hamstring":["run","gym"],"Right hamstring":["run","gym"],"Left calf":["run"],"Right calf":["run"],"Left knee":["run","gym"],"Right knee":["run","gym"],"Lower back":["gym","run"],"Hip flexor":["run","gym"],"Achilles":["run"],"Shoulder":["gym","swim"]};return m[z]&&m[z].includes(s.type);});
   const handleToggle=()=>{setTickAnim(true);setTimeout(()=>setTickAnim(false),400);onToggle(sessionKey);};
   return(
-    <div style={{background:cardBg,borderRadius:10,marginBottom:8,borderLeft:`3px solid ${borderCol}`,transition:"all 0.25s",opacity:checked||isMissed?0.85:1}}>
-      <div style={{padding:"12px 14px",cursor:!checked&&!isMissed?"pointer":"default"}} onClick={()=>!checked&&!isMissed&&setCollapsed(c=>!c)}>
+    <div style={{background:cardBg,borderRadius:10,marginBottom:8,borderLeft:`3px solid ${borderCol}`,transition:"all 0.25s",opacity:isActioned?0.85:1}}>
+      <div style={{padding:"12px 14px",cursor:!isActioned?"pointer":"default"}} onClick={()=>!isActioned&&setCollapsed(c=>!c)}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div style={{flex:1}}>
             <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
@@ -793,14 +1195,18 @@ function SessionCard({s,sessionKey,checked,isMissed,onToggle,onMiss,onLog,logDat
               {s.time&&s.time!=="-"&&s.time!=="—"&&<span style={{fontSize:9,color:"#777",fontFamily:"'DM Mono',monospace"}}>{s.time}</span>}
               <span style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>{s.duration}</span>
               {isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FF4747",background:"#FF474718",padding:"2px 7px",borderRadius:3}}>MISSED</span>}
-              {hasWarning&&!checked&&!isMissed&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FFB347",background:"#FFB34720",padding:"2px 7px",borderRadius:3}}>⚠️ INJURY</span>}
+              {isPartial&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FFB347",background:"#FFB34718",padding:"2px 7px",borderRadius:3}}>PARTIAL</span>}
+              {hasWarning&&!isActioned&&<span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"#FFB347",background:"#FFB34720",padding:"2px 7px",borderRadius:3}}>⚠️ INJURY</span>}
             </div>
-            <div style={{fontFamily:"'Pirata One',cursive",fontSize:19,letterSpacing:1,color:checked?"#47FFB8":isMissed?"#FF6666":"var(--text)",textDecoration:isMissed||checked?"line-through":"none"}}>{cfg.icon} {s.title}</div>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:19,letterSpacing:1,color:checked?"#47FFB8":isMissed?"#FF6666":isPartial?"#FFB347":"var(--text)",textDecoration:isActioned?"line-through":"none"}}>{cfg.icon} {s.title}</div>
           </div>
           <div style={{display:"flex",gap:5,marginLeft:10,flexShrink:0,alignItems:"center"}}>
-            {!checked&&!isMissed&&<span style={{fontSize:10,color:"var(--border)"}}>{collapsed?"▼":"▲"}</span>}
+            {!isActioned&&<span style={{fontSize:10,color:"var(--border)"}}>{collapsed?"▼":"▲"}</span>}
             <button onClick={e=>{e.stopPropagation();handleToggle();}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${checked?"#47FFB8":"var(--border)"}`,background:checked?"#47FFB825":"var(--card)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",animation:tickAnim?"tickBounce 0.4s ease":"none",fontSize:15}}>
               <span style={{color:checked?"#47FFB8":"#444"}}>✓</span>
+            </button>
+            <button onClick={e=>{e.stopPropagation();onPartial(sessionKey);}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${isPartial?"#FFB347":"var(--border)"}`,background:isPartial?"#FFB34725":"var(--card)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:13}}>
+              <span style={{color:isPartial?"#FFB347":"#444"}}>½</span>
             </button>
             <button onClick={e=>{e.stopPropagation();onMiss(sessionKey);}} style={{width:32,height:32,borderRadius:7,border:`2px solid ${isMissed?"#FF4747":"var(--border)"}`,background:isMissed?"#FF474725":"var(--card)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",fontSize:15}}>
               <span style={{color:isMissed?"#FF4747":"#444"}}>✕</span>
@@ -1135,7 +1541,13 @@ function StatsTab({sessionLogs,fiveKTimes,setFiveKTimes}){
 }
 
 // ── SHARE WEEK MODAL ──────────────────────────────────────────────
-function ShareWeekModal({week,wkNum,wkData,checked,missed,sessionLogs,phase,startDate,onClose}){
+function ShareWeekModal({week,wkNum,wkData,checked,missed,sessionLogs,phase,startDate,theme,goalCfg,onClose}){
+  const isCrimson=theme==="crimson";
+  const bgColor=isCrimson?"#0a0000":"#0a0a0a";
+  const cardColor=isCrimson?"#200000":"#141414";
+  const textColor=isCrimson?"#ffe8e8":"#f0f0f0";
+  const dimColor=isCrimson?"#cc4444":"#555555";
+  const accentColor=(goalCfg?.color)||phase?.color||"#E8FF47";
   const canvasRef=React.useRef(null);
   const sKey2=(w,di,si)=>`${w}-${di}-${si}`;
 
@@ -1146,55 +1558,55 @@ function ShareWeekModal({week,wkNum,wkData,checked,missed,sessionLogs,phase,star
     const W=canvas.width,H=canvas.height;
 
     // Background
-    ctx.fillStyle="var(--bg)";
+    ctx.fillStyle=bgColor;
     ctx.fillRect(0,0,W,H);
 
     // Top accent bar
-    ctx.fillStyle=phase?.color??"#E8FF47";
+    ctx.fillStyle=accentColor;
     ctx.fillRect(0,0,W,4);
 
     // Title
-    ctx.fillStyle="var(--text)";
+    ctx.fillStyle=textColor;
     ctx.font="bold 28px serif";
     ctx.fillText("SUPPER CLUB",20,44);
 
-    ctx.fillStyle=phase?.color??"#E8FF47";
+    ctx.fillStyle=accentColor;
     ctx.font="14px monospace";
-    ctx.fillText(`WEEK ${wkNum} · ${phase?.label.split("—")[1].trim().toUpperCase()??""}`,20,66);
+    ctx.fillText(`WEEK ${wkNum} · ${(goalCfg?.label||phase?.label||"").toUpperCase()}`,20,66);
 
     if(startDate){
       const d=addDays(new Date(startDate),(week)*7);
-      ctx.fillStyle="#444";
+      ctx.fillStyle=dimColor;
       ctx.font="11px monospace";
       ctx.fillText(d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),20,84);
     }
 
     // Separator
-    ctx.fillStyle="var(--border)";
+    ctx.fillStyle=isCrimson?"#3d0a0a":"#1e1e1e";
     ctx.fillRect(0,96,W,1);
 
     // Sessions
     let y=116;
-    const typeColors={run:"#E8FF47",cycle:"#47C8FF",swim:"#47FFB8",gym:"#FF6B47",rest:"var(--muted)"};
+    const typeColors={run:"#E8FF47",cycle:"#47C8FF",swim:"#47FFB8",gym:"#FF6B47",rest:"#666666"};
     wkData.forEach((day,di)=>{
       day.sessions.forEach((s,si)=>{
         const k=sKey2(week,di,si);
         const isDone=checked[k];
         const isMiss=missed[k];
         const log=sessionLogs[`log-${week}-${di}-${si}`];
-        const col=typeColors[s.type]||"var(--muted)";
+        const col=typeColors[s.type]||"#888888";
 
         // dot
         ctx.fillStyle=isDone?"#47FFB8":isMiss?"#FF4747":col;
         ctx.beginPath();ctx.arc(20,y-4,4,0,Math.PI*2);ctx.fill();
 
         // day label
-        ctx.fillStyle="var(--dim)";
+        ctx.fillStyle=dimColor;
         ctx.font="10px monospace";
         ctx.fillText(day.day,32,y);
 
         // session name
-        ctx.fillStyle=isDone?"#47FFB8":isMiss?"#666":"#ccc";
+        ctx.fillStyle=isDone?"#47FFB8":isMiss?"#774444":textColor;
         ctx.font=`${isDone||isMiss?"italic ":""}12px monospace`;
         const title=s.title.length>28?s.title.slice(0,27)+"…":s.title;
         ctx.fillText(title,72,y);
@@ -1220,14 +1632,14 @@ function ShareWeekModal({week,wkNum,wkData,checked,missed,sessionLogs,phase,star
     const total=wkData.reduce((a,d)=>a+d.sessions.length,0);
     const miss=wkData.reduce((a,d,di)=>a+d.sessions.filter((_,si)=>missed[sKey2(week,di,si)]).length,0);
 
-    ctx.fillStyle="var(--card)";
+    ctx.fillStyle=cardColor;
     ctx.roundRect(16,H-68,W-32,52,8);
     ctx.fill();
 
-    ctx.fillStyle=phase?.color??"#E8FF47";
+    ctx.fillStyle=accentColor;
     ctx.font="bold 20px serif";
     ctx.fillText(`${done}/${total}`,24,H-40);
-    ctx.fillStyle="var(--dim)";
+    ctx.fillStyle=dimColor;
     ctx.font="10px monospace";
     ctx.fillText("SESSIONS DONE",24,H-24);
 
@@ -1235,12 +1647,12 @@ function ShareWeekModal({week,wkNum,wkData,checked,missed,sessionLogs,phase,star
       ctx.fillStyle="#FF4747";
       ctx.font="bold 20px serif";
       ctx.fillText(`${miss}`,120,H-40);
-      ctx.fillStyle="var(--dim)";
+      ctx.fillStyle=dimColor;
       ctx.font="10px monospace";
       ctx.fillText("MISSED",120,H-24);
     }
 
-    ctx.fillStyle="var(--vdim)";
+    ctx.fillStyle=isCrimson?"#661111":"#333333";
     ctx.font="10px monospace";
     ctx.fillText("harryjudge.github.io/thesupperclub",W-260,H-24);
 
@@ -1278,16 +1690,21 @@ function ShareWeekModal({week,wkNum,wkData,checked,missed,sessionLogs,phase,star
 }
 
 // ── RACE DAY TAB ───────────────────────────────────────────────────
-function RaceDayTab(){
+function RaceDayTab({goal="5K"}){
+  const raceChecklist=getRaceChecklist(goal);
+  const goalCfg=GOAL_CONFIGS[goal]||GOAL_CONFIGS["5K"];
   const[checks,setChecks]=useState(()=>{try{const s=localStorage.getItem("sc_racechecks");return s?JSON.parse(s):{}}catch{return{}}});
   useEffect(()=>{try{localStorage.setItem("sc_racechecks",JSON.stringify(checks))}catch{}},[checks]);
   const toggle=key=>setChecks(p=>({...p,[key]:!p[key]}));
-  const total=RACE_CHECKLIST.reduce((a,s)=>a+s.items.length,0);
+  const total=raceChecklist.reduce((a,s)=>a+s.items.length,0);
   const done=Object.values(checks).filter(Boolean).length;
   return(
     <div style={{padding:"16px 20px 0"}}>
-      <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>Race Day</div>
-      <div style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:14}}>WEEK 12 · 5K TIME TRIAL PREP</div>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+        <span style={{fontSize:24}}>{goalCfg.icon}</span>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2}}>{goalCfg.raceLabel}</div>
+      </div>
+      <div style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:14}}>WEEK 12 · RACE DAY PREP</div>
       <div style={{background:"var(--card)",borderRadius:8,padding:"12px 14px",marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
           <span style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2}}>CHECKLIST PROGRESS</span>
@@ -1297,7 +1714,7 @@ function RaceDayTab(){
           <div style={{height:"100%",width:`${(done/total)*100}%`,background:done===total?"#47FFB8":"#FF6B47",borderRadius:3,transition:"width 0.3s"}}/>
         </div>
       </div>
-      {RACE_CHECKLIST.map((section,si)=>(
+      {raceChecklist.map((section,si)=>(
         <div key={si} style={{marginBottom:16}}>
           <div style={{fontSize:9,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:3,marginBottom:8}}>{section.section}</div>
           <div style={{background:"var(--card)",borderRadius:8,overflow:"hidden"}}>
@@ -1321,59 +1738,76 @@ function RaceDayTab(){
 }
 
 // ── POST PLAN TAB ──────────────────────────────────────────────────
-function PostPlanTab(){
-  const[time,setTime]=useState(()=>{try{return localStorage.getItem("sc_fivektime")||""}catch{return""}});
+function PostPlanTab({goal="5K",racePB=""}){
+  const goalCfg=GOAL_CONFIGS[goal]||GOAL_CONFIGS["5K"];
+  const goalTargets=POST_PLAN_TARGETS[goal]||POST_PLAN_TARGETS["5K"];
+  const storageKey="sc_racetime_"+goal;
+  const[time,setTime]=useState(()=>{try{return localStorage.getItem(storageKey)||""}catch{return""}});
   const[saved,setSaved]=useState(!!time);
-  const save=()=>{try{localStorage.setItem("sc_fivektime",time);setSaved(true)}catch{}};
-  const mins=parseFloat(time);
-  const bucket=mins<21?"Sub 21:00":mins<22?"Sub 22:00":"Sub 23:00";
-  const targets=POST_PLAN_TARGETS[bucket]||POST_PLAN_TARGETS["Sub 23:00"];
+  const save=()=>{try{localStorage.setItem(storageKey,time);setSaved(true)}catch{}};
+  const bucket=getPostPlanBucket(time,goal);
+  const targets=bucket?goalTargets[bucket]:null;
+  const placeholders={"5K":"e.g. 22:34","10K":"e.g. 47:20","HM":"e.g. 1:52:00","FM":"e.g. 3:55:00"};
   return(
     <div style={{padding:"16px 20px 0"}}>
-      <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>What's Next</div>
-      <div style={{fontSize:9,color:"#666",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>POST-PLAN PROGRESSION GUIDE</div>
-      <div style={{background:"var(--card)",borderRadius:8,padding:"14px",marginBottom:16}}>
-        <div style={{fontSize:10,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>LOG YOUR 5K TEST TIME</div>
-        <div style={{display:"flex",gap:8}}>
-          <input type="text" placeholder="e.g. 22:34 (mm:ss)" value={time} onChange={e=>setTime(e.target.value)} style={{flex:1}}/>
-          <button onClick={save} style={{padding:"8px 16px",background:"#FF6B4720",border:"1px solid #FF6B4750",borderRadius:6,color:"#FF6B47",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>SAVE</button>
-        </div>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+        <span style={{fontSize:22}}>{goalCfg.icon}</span>
+        <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2}}>What's Next</div>
       </div>
-      {saved&&time&&(
+      <div style={{fontSize:9,color:"var(--dim)",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:16}}>
+        {goalCfg.label.toUpperCase()} PROGRESSION GUIDE
+      </div>
+      <div style={{background:"var(--card)",borderRadius:8,padding:"14px",marginBottom:16}}>
+        <div style={{fontSize:10,color:goalCfg.color,fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:8}}>
+          LOG YOUR {goalCfg.label.toUpperCase()} RESULT
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <input type="text" placeholder={placeholders[goal]} value={time} onChange={e=>setTime(e.target.value)} style={{flex:1}}/>
+          <button onClick={save} style={{padding:"8px 16px",background:goalCfg.color+"20",border:"1px solid "+goalCfg.color+"50",borderRadius:6,color:goalCfg.color,cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:11}}>SAVE</button>
+        </div>
+        {racePB&&<div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginTop:6}}>Starting PB: {racePB}</div>}
+      </div>
+      {saved&&time&&targets&&(
         <div style={{animation:"slideIn 0.3s ease"}}>
           <div style={{background:"#47FFB810",border:"1px solid #47FFB830",borderRadius:10,padding:"14px",marginBottom:16}}>
             <div style={{fontSize:9,color:"#47FFB8",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:4}}>RESULT LOGGED</div>
             <div style={{fontFamily:"'Pirata One',cursive",fontSize:32,color:"#47FFB8",letterSpacing:2}}>{time}</div>
-            <div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",marginTop:4}}>5K Time Trial · Week 12</div>
+            <div style={{fontSize:11,color:"var(--dim)",fontFamily:"'DM Mono',monospace",marginTop:4}}>{goalCfg.raceLabel} · Week 12</div>
           </div>
           <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
             <div style={{fontSize:9,color:"#E8FF47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:12}}>YOUR NEW TRAINING PACES</div>
-            {[["Easy / Z2",targets.easy,"#47FFB8"],["Tempo",targets.tempo,"#E8FF47"],["400m Reps",targets.reps,"#FF4747"],["10K Pace",targets.tenK,"#FF8C47"]].map(([lbl,val,col])=>(
-              <div key={lbl} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid var(--border)`}}>
+            {[["Easy / Z2",targets.easy,"#47FFB8"],["Tempo",targets.tempo,"#E8FF47"],["Rep Pace",targets.reps,"#FF4747"],["Race Pace",targets.race,goalCfg.color]].map(([lbl,val,col])=>(
+              <div key={lbl} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid var(--border)"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:6,height:6,borderRadius:"50%",background:col}}/>
-                  <span style={{fontSize:12,color:"#bbb",fontFamily:"'Barlow',sans-serif"}}>{lbl}</span>
+                  <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0}}/>
+                  <span style={{fontSize:12,color:"#ccc",fontFamily:"'Barlow',sans-serif"}}>{lbl}</span>
                 </div>
-                <span style={{fontSize:13,fontFamily:"'DM Mono',monospace",color:col}}>{val}/km</span>
+                <span style={{fontSize:13,fontFamily:"'DM Mono',monospace",color:col}}>{val}</span>
               </div>
             ))}
           </div>
-          <div style={{background:"#FF6B4710",border:"1px solid #FF6B4730",borderRadius:10,padding:"14px",marginBottom:16}}>
-            <div style={{fontSize:9,color:"#FF6B47",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>NEXT GOAL</div>
-            <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:"#FF6B47",letterSpacing:1,marginBottom:6}}>{targets.nextGoal}</div>
-            <div style={{fontSize:11,color:"#666",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>Start a fresh 12-week block with your new paces. Increase interval reps by 1 from week 1. Your aerobic base is built — now we sharpen it further.</div>
+          <div style={{background:goalCfg.color+"10",border:"1px solid "+goalCfg.color+"28",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:9,color:goalCfg.color,fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:6}}>NEXT GOAL</div>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:22,color:goalCfg.color,letterSpacing:1,marginBottom:6}}>{targets.nextGoal}</div>
+            <div style={{fontSize:11,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.7}}>
+              Start a fresh 12-week block with your new paces. Increase interval reps by 1 from week 1. Your aerobic base is built — now sharpen it further.
+            </div>
           </div>
         </div>
       )}
       <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
-        <div style={{fontSize:9,color:"#47C8FF",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:10}}>PROGRESSION LADDER</div>
-        {Object.entries(POST_PLAN_TARGETS).map(([key,val])=>(
-          <div key={key} style={{padding:"8px 0",borderBottom:`1px solid var(--border)`}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+        <div style={{fontSize:9,color:"#47C8FF",fontFamily:"'DM Mono',monospace",letterSpacing:2,marginBottom:10}}>
+          {goalCfg.label.toUpperCase()} PROGRESSION LADDER
+        </div>
+        {Object.entries(goalTargets).map(([key,val])=>(
+          <div key={key} style={{padding:"8px 0",borderBottom:"1px solid var(--border)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
               <span style={{fontFamily:"'Pirata One',cursive",fontSize:16,color:"#47C8FF",letterSpacing:1}}>{key}</span>
               <span style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace"}}>→ {val.nextGoal.split(" in")[0]}</span>
             </div>
-            <div style={{fontSize:9,color:"#444",fontFamily:"'DM Mono',monospace"}}>Easy: {val.easy} · Tempo: {val.tempo} · Reps: {val.reps}</div>
+            <div style={{fontSize:9,color:"var(--vdim)",fontFamily:"'DM Mono',monospace"}}>
+              Easy: {val.easy} · Tempo: {val.tempo} · Reps: {val.reps}
+            </div>
           </div>
         ))}
       </div>
@@ -1388,18 +1822,32 @@ function App(){
   const[view,setView]=useState("day");
   const[checked,setChecked]=useState(()=>{try{const s=localStorage.getItem("sc_progress");return s?JSON.parse(s):{}}catch{return{}}});
   const[missed,setMissed]=useState(()=>{try{const s=localStorage.getItem("sc_missed");return s?JSON.parse(s):{}}catch{return{}}});
+  const[partial,setPartial]=useState(()=>{try{const s=localStorage.getItem("sc_partial");return s?JSON.parse(s):{}}catch{return{}}});
   const[sessionLogs,setSessionLogs]=useState(()=>{try{const s=localStorage.getItem("sc_logs");return s?JSON.parse(s):{}}catch{return{}}});
   const[readiness,setReadiness]=useState(()=>{try{const s=localStorage.getItem("sc_readiness");return s?JSON.parse(s):{}}catch{return{}}});
+  const[goal,setGoal]=useState(()=>{try{return localStorage.getItem("sc_goal")||null}catch{return null}});
+  const[racePB,setRacePB]=useState(()=>{try{return localStorage.getItem("sc_racepb")||""}catch{return""}});
   const[startDate,setStartDate]=useState(()=>{try{return localStorage.getItem("sc_startdate")||null}catch{return null}});
   const[theme,setTheme]=useState(()=>{try{return localStorage.getItem("sc_theme")||"dark"}catch{return"dark"}});
   const[weekNotes,setWeekNotes]=useState(()=>{try{const s=localStorage.getItem("sc_weeknotes");return s?JSON.parse(s):{}}catch{return{}}});
   const[injuryFlags,setInjuryFlags]=useState(()=>{try{const s=localStorage.getItem("sc_injuries");return s?JSON.parse(s):{}}catch{return{}}});
   const[fiveKTimes,setFiveKTimes]=useState(()=>{try{const s=localStorage.getItem("sc_5ktimes");return s?JSON.parse(s):[]}catch{return[]}});
   const[easyPaceSecs,setEasyPaceSecs]=useState(()=>{try{return parseInt(localStorage.getItem("sc_easypace")||"360")}catch{return 360}});
+  const[crossTrainPrefs,setCrossTrainPrefs]=useState(()=>{try{const s=localStorage.getItem("sc_crosstrainprefs");return s?JSON.parse(s):{bike:1,swim:1,gym:2,run:3}}catch{return{bike:1,swim:1,gym:2,run:3}}});
+
+  useEffect(()=>{try{localStorage.setItem("sc_goal",goal||"")}catch{}},[goal]);
+  useEffect(()=>{try{localStorage.setItem("sc_racepb",racePB||"")}catch{}},[racePB]);
   useEffect(()=>{try{localStorage.setItem("sc_easypace",easyPaceSecs)}catch{}},[easyPaceSecs]);
+  useEffect(()=>{try{localStorage.setItem("sc_crosstrainprefs",JSON.stringify(crossTrainPrefs))}catch{}},[crossTrainPrefs]);
+
+  const weekData=React.useMemo(()=>Array.from({length:12},(_,i)=>makeWeek(i+1,goal||"5K")),[goal]);
+  const TOTAL_SESSIONS=React.useMemo(()=>weekData.reduce((a,wk)=>a+wk.reduce((b,d)=>b+d.sessions.length,0),0),[weekData]);
   const PACES_COMPUTED=computePaces(easyPaceSecs);
+  const goalCfg=GOAL_CONFIGS[goal||"5K"]||GOAL_CONFIGS["5K"];
   const[showInjury,setShowInjury]=useState(false);
   const[showReset,setShowReset]=useState(false);
+  const[showSettings,setShowSettings]=useState(false);
+  const[bodyWeight,setBodyWeight]=useState(()=>{try{return parseFloat(localStorage.getItem("sc_bodyweight")||"76")}catch{return 76}});
   const[showOverview,setShowOverview]=useState(false);
   const[showSwap,setShowSwap]=useState(false);
   const[showShare,setShowShare]=useState(false);
@@ -1409,17 +1857,24 @@ function App(){
   const[toast,setToast]=useState(null);
   const[showReadiness,setShowReadiness]=useState(false);
   const[logModal,setLogModal]=useState(null);
-  const toastRef=useRef(null);
+  // Real-time countdown — ticks every minute
+  const[now,setNow]=useState(()=>new Date());
+  useEffect(()=>{
+    const t=setInterval(()=>setNow(new Date()),60000);
+    return()=>clearInterval(t);
+  },[]);
   const touchStartX=useRef(null);
   const th=THEMES[theme]||THEMES.dark;
 
   useEffect(()=>{try{localStorage.setItem("sc_progress",JSON.stringify(checked))}catch{}},[checked]);
   useEffect(()=>{try{localStorage.setItem("sc_missed",JSON.stringify(missed))}catch{}},[missed]);
+  useEffect(()=>{try{localStorage.setItem("sc_partial",JSON.stringify(partial))}catch{}},[partial]);
   useEffect(()=>{try{localStorage.setItem("sc_logs",JSON.stringify(sessionLogs))}catch{}},[sessionLogs]);
   useEffect(()=>{try{localStorage.setItem("sc_readiness",JSON.stringify(readiness))}catch{}},[readiness]);
   useEffect(()=>{try{localStorage.setItem("sc_weeknotes",JSON.stringify(weekNotes))}catch{}},[weekNotes]);
   useEffect(()=>{try{localStorage.setItem("sc_injuries",JSON.stringify(injuryFlags))}catch{}},[injuryFlags]);
   useEffect(()=>{try{localStorage.setItem("sc_theme",theme)}catch{}},[theme]);
+  useEffect(()=>{try{localStorage.setItem("sc_bodyweight",bodyWeight)}catch{}},[bodyWeight]);
   useEffect(()=>{try{localStorage.setItem("sc_swaps",JSON.stringify(swaps))}catch{}},[swaps]);
   useEffect(()=>{try{localStorage.setItem("sc_custom",JSON.stringify(customSessions))}catch{}},[customSessions]);
 
@@ -1450,20 +1905,25 @@ function App(){
   };
   const toggleSession=key=>{
     setChecked(p=>({...p,[key]:!p[key]}));
-    // if marking done, clear any missed flag
     setMissed(p=>{const n={...p};delete n[key];return n;});
+    setPartial(p=>{const n={...p};delete n[key];return n;});
   };
   const toggleMissed=key=>{
     setMissed(p=>({...p,[key]:!p[key]}));
-    // if marking missed, clear any done flag
     setChecked(p=>{const n={...p};delete n[key];return n;});
+    setPartial(p=>{const n={...p};delete n[key];return n;});
+  };
+  const togglePartial=key=>{
+    setPartial(p=>({...p,[key]:!p[key]}));
+    setChecked(p=>{const n={...p};delete n[key];return n;});
+    setMissed(p=>{const n={...p};delete n[key];return n;});
   };
 
   useEffect(()=>{
     const day=weekData[week][dayIdx];
     const keys=day.sessions.map((_,si)=>sKey(week,dayIdx,si));
-    const allActioned=keys.every(k=>checked[k]||missed[k]);
-    const anyDone=keys.some(k=>checked[k]);
+    const allActioned=keys.every(k=>checked[k]||missed[k]||partial[k]);
+    const anyDone=keys.some(k=>checked[k]||partial[k]);
     // Only advance if all actioned AND at least one was done (not all missed)
     if(!allActioned||!anyDone)return;
     const ndi=dayIdx+1;
@@ -1475,7 +1935,7 @@ function App(){
       if(nwk<12){const t=setTimeout(()=>{if(typeof confetti!=="undefined")confetti({particleCount:100,spread:70,origin:{y:0.4},colors:["#E8FF47","#47FFB8","#47C8FF","#FF6B47"]});setWeek(nwk);setDayIdx(0);showToast(`Week ${week+1} complete! 🏆`)},800);return()=>clearTimeout(t);}
       else showToast("Plan complete! 🏁 Time to race.");
     }
-  },[checked,missed]);
+  },[checked,missed,partial]);
 
   // Streak: consecutive days with all sessions actioned
   const streak=React.useMemo(()=>{
@@ -1484,18 +1944,18 @@ function App(){
       const days=weekData[w];
       for(let di=days.length-1;di>=0;di--){
         const keys=days[di].sessions.map((_,si)=>sKey(w,di,si));
-        if(keys.every(k=>checked[k]||missed[k]))s++;
+        if(keys.every(k=>checked[k]||missed[k]||partial[k]))s++;
         else break outer;
       }
     }
     return s;
-  },[checked,missed,week]);
+  },[checked,missed,partial,week]);
 
   const wkKeys=w=>weekData[w].flatMap((d,di)=>d.sessions.map((_,si)=>sKey(w,di,si)));
-  const wkDone=w=>wkKeys(w).filter(k=>checked[k]).length;
+  const wkDone=w=>wkKeys(w).filter(k=>checked[k]).length+wkKeys(w).filter(k=>partial[k]).length*0.5;
   const wkMissed=w=>wkKeys(w).filter(k=>missed[k]).length;
   const wkTotal=w=>wkKeys(w).length;
-  const done=Object.values(checked).filter(Boolean).length;
+  const done=Object.values(checked).filter(Boolean).length+Object.values(partial).filter(Boolean).length*0.5;
   const missedCount=Object.values(missed).filter(Boolean).length;
   const pct=Math.round((done/TOTAL_SESSIONS)*100);
   const missedPct=Math.round((missedCount/TOTAL_SESSIONS)*100);
@@ -1524,32 +1984,47 @@ function App(){
   const dayDate=startDate?addDays(new Date(startDate),week*7+dayIdx):null;
   const wkData=weekData[week];
 
-  // Apply any recorded day swaps for this week
+  // Apply swaps + cross-train prefs to wkData
   const wkSwapMap=swaps[String(week)]||{};
-  const effectiveWkData=wkData.map((day,di)=>{
+  const baseWkData=wkData.map((day,di)=>{
     const swappedFrom=wkSwapMap[di];
-    if(swappedFrom!==undefined){
-      // This day's sessions come from the swapped day, but keep the label/day name
-      return{...wkData[swappedFrom],day:day.day,label:day.label};
-    }
-    return day;
+    return swappedFrom!==undefined?{...wkData[swappedFrom],day:day.day,label:day.label}:day;
+  });
+  // Count globally per week — find which day indices have each cross-train type
+  const daysWithType=type=>baseWkData.map((d,di)=>d.sessions.some(s=>s.type===type)?di:-1).filter(i=>i>=0);
+  const keepBike=new Set(daysWithType("cycle").slice(0,crossTrainPrefs.bike));
+  const keepSwim=new Set(daysWithType("swim").slice(0,crossTrainPrefs.swim));
+  const keepGym =new Set(daysWithType("gym").slice(0,crossTrainPrefs.gym));
+  const weekdayRunDays=daysWithType("run").filter(di=>di<5);
+  const keepRunDays=new Set([...weekdayRunDays.slice(0,(crossTrainPrefs.run??3)),5,6]);
+  const restFallback={slot:"-",time:"-",type:"rest",preRun:false,title:"Active Recovery",duration:"-",paceKeys:[],cooldown:null,mobility:null,details:["Light walk or complete rest","Foam roll 10 min","Sauna if available"],rpe:1};
+  const effectiveWkData=baseWkData.map((day,di)=>{
+    const sessions=day.sessions.filter(s=>{
+      if(s.type==="cycle") return keepBike.has(di);
+      if(s.type==="swim")  return keepSwim.has(di);
+      if(s.type==="gym")   return keepGym.has(di);
+      if(s.type==="run")   return keepRunDays.has(di);
+      return true;
+    });
+    return{...day,sessions:sessions.length?sessions:[restFallback]};
   });
 
   const dayData=effectiveWkData[dayIdx];
   const customDaySessions=(customSessions[`${week}-${dayIdx}`]||[]);
   const wkNum=week+1;
-  const isDeload=wkNum===4||wkNum===8;
-  const isPeak=wkNum===12;
+  const isDeload=wkPhase(wkNum,goal||"5K")==="deload";
+  const isPeak=wkPhase(wkNum,goal||"5K")==="race";
+  const isTaper=wkPhase(wkNum,goal||"5K")==="taper";
   const phase=phases.find(p=>p.weeks.includes(wkNum));
   const todayKey=`r-${week}-${dayIdx}`;
   const todayReadiness=readiness[todayKey];
 
   const resetPlan=()=>{
-    ["sc_progress","sc_missed","sc_logs","sc_readiness","sc_weeknotes","sc_5ktimes","sc_racechecks","sc_startdate","sc_swaps","sc_custom","sc_easypace"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
-    setChecked({});setMissed({});setSessionLogs({});setReadiness({});setWeekNotes({});setFiveKTimes([]);
-    setSwaps({});setCustomSessions({});setEasyPaceSecs(360);
+    ["sc_progress","sc_missed","sc_logs","sc_readiness","sc_weeknotes","sc_5ktimes","sc_racechecks","sc_startdate","sc_swaps","sc_custom","sc_easypace","sc_goal","sc_racepb","sc_crosstrainprefs","sc_bodyweight","sc_partial"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
+    setChecked({});setMissed({});setSessionLogs({});setReadiness({});setWeekNotes({});setFiveKTimes([]);setPartial({});
+    setSwaps({});setCustomSessions({});setEasyPaceSecs(360);setCrossTrainPrefs({bike:1,swim:1,gym:2,run:3});setBodyWeight(76);
+    setGoal(null);setRacePB("");
     setWeek(0);setDayIdx(0);setStartDate(null);setShowReset(false);
-    showToast("Plan reset — set a new start date");
   };
 
   // Load score: sum of (RPE × session count) for completed sessions in a week
@@ -1566,7 +2041,6 @@ function App(){
     });
     return total;
   };
-  const maxLoad=Math.max(...Array.from({length:12},(_,i)=>wkLoadScore(i)),1);
 
   const exportWeek=()=>{
     let txt=`SUPPER CLUB — Week ${wkNum}\n${"=".repeat(28)}\n\n`;
@@ -1590,6 +2064,15 @@ function App(){
 
   const tabs=[["day","DAY"],["paces","PACES"],["stats","STATS"],["race","RACE DAY"],["next","NEXT STEPS"]];
 
+  // First launch: goal selection → calendar
+  if(!goal){
+    return <GoalSetupModal onSave={({goal:g,raceTime,easySecs})=>{
+      setGoal(g);
+      setRacePB(raceTime);
+      setEasyPaceSecs(easySecs);
+      try{localStorage.setItem("sc_goal",g);localStorage.setItem("sc_racepb",raceTime);localStorage.setItem("sc_easypace",easySecs);}catch{}
+    }}/>;
+  }
   if(!startDate){
     return <CalendarSetupModal onSave={d=>{setStartDate(d);try{localStorage.setItem("sc_startdate",d)}catch{}}}/>;
   }
@@ -1600,6 +2083,20 @@ function App(){
       {toast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#1a2a1a",border:"1px solid #47FFB860",borderRadius:10,padding:"10px 18px",fontSize:12,fontFamily:"'DM Mono',monospace",color:"#47FFB8",boxShadow:"0 4px 24px rgba(0,0,0,0.7)",whiteSpace:"nowrap",animation:"fadeIn 0.2s ease"}}>{toast}</div>}
       {showReadiness&&<ReadinessModal dateKey={todayKey} existing={todayReadiness} onSave={d=>{setReadiness(p=>({...p,[todayKey]:d}));setShowReadiness(false);showToast("Readiness saved ✓")}} onClose={()=>setShowReadiness(false)}/>}
       {logModal&&<SessionLogModal session={logModal.session} logKey={logModal.key} existing={sessionLogs[logModal.key]} onSave={d=>{setSessionLogs(p=>({...p,[logModal.key]:d}));setLogModal(null);showToast("Session logged ✓")}} onClose={()=>setLogModal(null)}/>}
+
+      {/* SETTINGS MODAL */}
+      {showSettings&&<SettingsModal
+        goal={goal} startDate={startDate} bodyWeight={bodyWeight} easyPaceSecs={easyPaceSecs}
+        onClose={()=>setShowSettings(false)}
+        onSave={({goal:g,startDate:sd,bodyWeight:bw,easyPaceSecs:ep})=>{
+          if(g!==goal){setGoal(g);try{localStorage.setItem("sc_goal",g)}catch{}}
+          if(sd!==startDate){setStartDate(sd);try{localStorage.setItem("sc_startdate",sd)}catch{}}
+          setBodyWeight(bw);
+          setEasyPaceSecs(ep);
+          setShowSettings(false);
+          showToast("Settings saved ✓");
+        }}
+      />}
 
       {/* RESET MODAL */}
       {showReset&&(
@@ -1619,7 +2116,7 @@ function App(){
       )}
 
       {showSwap&&<SwapModal week={week} dayIdx={dayIdx} wkData={effectiveWkData} swaps={swaps} onSave={handleSwap} onClose={()=>setShowSwap(false)}/>}
-      {showShare&&<ShareWeekModal week={week} wkNum={wkNum} wkData={effectiveWkData} checked={checked} missed={missed} sessionLogs={sessionLogs} phase={phase} startDate={startDate} onClose={()=>setShowShare(false)}/>}
+      {showShare&&<ShareWeekModal week={week} wkNum={wkNum} wkData={effectiveWkData} checked={checked} missed={missed} sessionLogs={sessionLogs} phase={phase} startDate={startDate} theme={theme} goalCfg={goalCfg} onClose={()=>setShowShare(false)}/>}
       {showAddSession&&<AddSessionModal onSave={handleAddSession} onClose={()=>setShowAddSession(false)}/>}
 
       {/* INJURY MODAL */}
@@ -1643,7 +2140,9 @@ function App(){
       <div style={{background:"var(--bg)",padding:"44px 20px 14px",borderBottom:`1px solid var(--border)`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"var(--dim)",marginBottom:4}}>12-WEEK ATHLETE PERFORMANCE PLAN</div>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"var(--dim)",marginBottom:4}}>
+              12-WEEK · {goalCfg.icon} {goalCfg.label.toUpperCase()}
+            </div>
             <h1 style={{fontFamily:"'Pirata One',cursive",fontSize:34,margin:0,lineHeight:1.1,letterSpacing:2}}>
               SUPPER CLUB<br/>
               <span style={{color:phase?.color??"#E8FF47"}}>{isPeak?"TEST YOURSELF.":isDeload?"RECOVER HARDER.":(phase?.label.split("—")[1].trim()??"BUILD")+"."}</span>
@@ -1654,6 +2153,10 @@ function App(){
             <button onClick={()=>setShowReadiness(true)} style={{background:todayReadiness?`${todayReadiness.avg>=4?"#47FFB8":todayReadiness.avg>=3?"#E8FF47":todayReadiness.avg>=2?"#FFB347":"#FF4747"}15`:"var(--card)",border:`1px solid ${todayReadiness?todayReadiness.avg>=4?"#47FFB840":todayReadiness.avg>=3?"#E8FF4740":todayReadiness.avg>=2?"#FFB34740":"#FF474740":"#222"}`,borderRadius:10,padding:"7px 10px",cursor:"pointer",textAlign:"center",minWidth:54}}>
               <div style={{fontSize:16}}>{todayReadiness?["😖","😤","😐","😊","🤩"][Math.round(todayReadiness.avg)-1]:"💤"}</div>
               <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"#444",marginTop:2,letterSpacing:1}}>{todayReadiness?`${todayReadiness.avg}/5`:"READY?"}</div>
+            </button>
+            {/* Settings */}
+            <button onClick={()=>setShowSettings(true)} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"5px 8px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,color:"var(--dim)",letterSpacing:1}}>
+              ⚙️ SETTINGS
             </button>
             {/* Theme toggle */}
             <button onClick={()=>setTheme(t=>t==="dark"?"crimson":"dark")} style={{background:theme==="crimson"?"#2d0808":"var(--card)",border:`1px solid ${theme==="crimson"?"#ff444440":"#222"}`,borderRadius:8,padding:"5px 8px",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,color:theme==="crimson"?"#ff4444":"#666",letterSpacing:1}}>
@@ -1668,11 +2171,9 @@ function App(){
             <span style={{fontSize:12}}>🔥</span>
             <span style={{fontFamily:"'Pirata One',cursive",fontSize:14,color:"#E8FF47"}}>{streak} day streak</span>
           </div>}
-          {/* Next session countdown */}
+          {/* Next session countdown — updates every minute */}
           {(()=>{
             if(!startDate)return null;
-            const now=new Date();
-            // Find next unchecked session with a real time
             for(let w=week;w<12;w++){
               for(let di=0;di<weekData[w].length;di++){
                 const day=weekData[w][di];
@@ -1788,7 +2289,9 @@ function App(){
             </div>
           )}
         </div>
-        {(isDeload||isPeak)&&<div style={{marginTop:8,display:"inline-block",fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isPeak?"#FF6B47":"#47C8FF",border:`1px solid ${isPeak?"#FF6B4740":"#47C8FF40"}`,padding:"3px 9px",borderRadius:4}}>{isPeak?"🏁 TAPER + 5K TEST — TARGET SUB 23:00":"♻️ DELOAD — 30% VOLUME REDUCTION"}</div>}
+        {(isDeload||isPeak||isTaper)&&<div style={{marginTop:8,display:"inline-block",fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:isPeak?goalCfg.color:isTaper?"#FFB347":"#47C8FF",border:`1px solid ${isPeak?goalCfg.color+"40":isTaper?"#FFB34740":"#47C8FF40"}`,padding:"3px 9px",borderRadius:4}}>
+          {isPeak?`🏁 RACE WEEK — ${goalCfg.raceLabel.toUpperCase()}`:isTaper?"🔽 TAPER — REDUCE VOLUME":"♻️ DELOAD — 30% VOLUME REDUCTION"}
+        </div>}
       </div>
 
       {/* WEEK SELECTOR */}
@@ -1833,9 +2336,10 @@ function App(){
               const isA=di===dayIdx,main=T[d.sessions[0].type];
               const dd=d.sessions.filter((_,si)=>checked[sKey(week,di,si)]).length;
               const dm=d.sessions.filter((_,si)=>missed[sKey(week,di,si)]).length;
+              const dp=d.sessions.filter((_,si)=>partial[sKey(week,di,si)]).length;
               const allD=dd===d.sessions.length;
               const anyMissed=dm>0&&!allD;
-              const allActioned=(dd+dm)===d.sessions.length&&!allD;
+              const allActioned=(dd+dm+dp)===d.sessions.length&&!allD;
               const pillDate=startDate?addDays(new Date(startDate),week*7+di):null;
               return(<button key={d.day} onClick={()=>setDayIdx(di)} style={{flex:1,padding:"7px 3px",borderRadius:7,position:"relative",border:isA?`1px solid ${main.color}`:allD?"1px solid #47FFB850":anyMissed?"1px solid #FF474750":"1px solid #222",background:isA?`${main.color}18`:allD?"#47FFB812":anyMissed?"#FF474710":"var(--bg2)",cursor:"pointer",transition:"all 0.15s",minWidth:0,overflow:"hidden"}}>
                 <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:0,color:isA?main.color:allD?"#47FFB8":anyMissed?"#FF8888":"#666",textAlign:"center"}}>{d.day}</div>
@@ -1865,7 +2369,7 @@ function App(){
                 longRunData:s.longRunData?{...s.longRunData,km:minsToKm(s.longRunData.mins,easyPaceSecs)}:null
               };
               return(
-              <SessionCard key={si} s={dynamicS} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed} injuryFlags={injuryFlags} paces={PACES_COMPUTED}
+              <SessionCard key={si} s={dynamicS} sessionKey={sKey(week,dayIdx,si)} checked={!!checked[sKey(week,dayIdx,si)]} isMissed={!!missed[sKey(week,dayIdx,si)]} isPartial={!!partial[sKey(week,dayIdx,si)]} onToggle={toggleSession} onMiss={toggleMissed} onPartial={togglePartial} injuryFlags={injuryFlags} paces={PACES_COMPUTED}
                 onLog={()=>setLogModal({session:s,key:`log-${week}-${dayIdx}-${si}`})} logData={sessionLogs[`log-${week}-${dayIdx}-${si}`]}/>
               );
             })}
@@ -1912,58 +2416,76 @@ function App(){
             {/* ── NUTRITION (inline below sessions) ── */}
             <div style={{borderTop:`1px solid var(--border)`,paddingTop:16,marginBottom:4}}>
               <div style={{fontFamily:"'Pirata One',cursive",fontSize:20,letterSpacing:2,marginBottom:2}}>Fuel Plan</div>
-              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:2,marginBottom:12}}>{dayData.theme.toUpperCase()} · WEEK {wkNum}</div>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:2,marginBottom:12}}>{dayData.theme.toUpperCase()} · WEEK {wkNum}
+                {(()=>{
+                  const isDouble=dayData.sessions.length>1&&dayData.sessions[0].type!=="rest";
+                  const isRest=dayData.sessions.every(s=>s.type==="rest");
+                  const water=isRest?2.5:isDouble?3.5:3.0;
+                  return <span style={{float:"right",color:"#47C8FF"}}>💧 {water}L</span>;
+                })()}
+              </div>
             </div>
-
-            {/* Macros */}
-            {(()=>{
-              const isDouble=dayData.sessions.length>1&&dayData.sessions[0].type!=="rest";
-              const isLong=dayData.sessions.some(s=>s.title&&s.title.includes("Long"));
-              const isRest=dayData.sessions.every(s=>s.type==="rest");
-              const kcal=isDeload?2400:isRest?2000:isDouble?3000:isLong?2800:2600;
-              const prot=Math.round(76*1.8);
-              const carb=isDeload?260:isRest?180:isDouble?380:isLong?340:300;
-              const water=isRest?2.5:isDouble?3.5:3.0;
-              const macros=[
-                {label:"PROTEIN",val:prot+"g",target:"1.8g/kg",color:"#47C8FF",pct:100},
-                {label:"CARBS",val:carb+"g",target:isDouble?"High day":isRest?"Low day":"Moderate",color:"#E8FF47",pct:isRest?50:isDouble?100:75},
-                {label:"FAT",val:"75g",target:"~75g",color:"#FF8C47",pct:83},
-                {label:"KCAL",val:kcal+"",target:"~target",color:"#47FFB8",pct:Math.min((kcal/3200)*100,100)},
-              ];
-              return(
-                <div style={{background:"var(--card)",borderRadius:10,padding:"12px 14px",marginBottom:12}}>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-                    {macros.map(m=>(
-                      <div key={m.label} style={{flex:"1 0 auto",minWidth:64,background:`${m.color}08`,border:`1px solid ${m.color}20`,borderRadius:8,padding:"7px 9px"}}>
-                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:1,marginBottom:2}}>{m.label}</div>
-                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:17,color:m.color,lineHeight:1}}>{m.val}</div>
-                        <div style={{height:2,background:"#222",borderRadius:2,marginTop:5}}><div style={{height:"100%",width:`${Math.min(m.pct,100)}%`,background:m.color,borderRadius:2}}/></div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:8,borderTop:`1px solid var(--border)`}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:13}}>💧</span>
-                      <span style={{fontSize:10,fontFamily:"'DM Mono',monospace",color:"var(--dim)"}}>{isDouble?"Add 500ml per session":"Sip consistently"}</span>
-                    </div>
-                    <span style={{fontFamily:"'Pirata One',cursive",fontSize:20,color:"#47C8FF"}}>{water}L</span>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Meal timing */}
             <div style={{background:"var(--card)",borderRadius:10,padding:"12px 14px",marginBottom:12}}>
-              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47FFB8",marginBottom:10}}>MEAL TIMING</div>
-              {dayData.nutrition.map((n,i)=>(
-                <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"7px 0",borderBottom:i<dayData.nutrition.length-1?"1px solid #1e1e1e":"none"}}>
-                  <div style={{minWidth:44}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:n.color}}>{n.time}</div></div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"#444",marginBottom:1}}>{n.label.toUpperCase()}</div>
-                    <div style={{fontSize:11,color:"var(--muted)",fontFamily:"'DM Mono',monospace",lineHeight:1.5}}>{n.food}</div>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47FFB8",marginBottom:10}}>MEAL TIMING & TARGETS</div>
+              {scaleNutrition(dayData.nutrition,bodyWeight).map((n,i)=>(
+                <div key={i} style={{padding:"10px 0",borderBottom:i<dayData.nutrition.length-1?"1px solid var(--border)":"none"}}>
+                  {/* Time + label row */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{width:3,height:28,borderRadius:2,background:n.color,flexShrink:0}}/>
+                      <div>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:n.color,letterSpacing:0.5}}>{n.time}</div>
+                        <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"var(--dim)"}}>{n.label.toUpperCase()}</div>
+                      </div>
+                    </div>
+                    {/* Macro pills */}
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                      {n.pro>0&&<div style={{background:"#47C8FF15",border:"1px solid #47C8FF30",borderRadius:5,padding:"3px 7px",textAlign:"center"}}>
+                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:13,color:"#47C8FF",lineHeight:1}}>{n.pro}g</div>
+                        <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:1}}>PRO</div>
+                      </div>}
+                      {n.carb>0&&<div style={{background:"#E8FF4715",border:"1px solid #E8FF4730",borderRadius:5,padding:"3px 7px",textAlign:"center"}}>
+                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:13,color:"#E8FF47",lineHeight:1}}>{n.carb}g</div>
+                        <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:1}}>CARB</div>
+                      </div>}
+                      {n.fat>0&&<div style={{background:"#FF8C4715",border:"1px solid #FF8C4730",borderRadius:5,padding:"3px 7px",textAlign:"center"}}>
+                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:13,color:"#FF8C47",lineHeight:1}}>{n.fat}g</div>
+                        <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:1}}>FAT</div>
+                      </div>}
+                      {/* kcal estimate */}
+                      <div style={{background:"#47FFB810",border:"1px solid #47FFB825",borderRadius:5,padding:"3px 7px",textAlign:"center"}}>
+                        <div style={{fontFamily:"'Pirata One',cursive",fontSize:13,color:"#47FFB8",lineHeight:1}}>{n.pro*4+n.carb*4+n.fat*9}</div>
+                        <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:1}}>KCAL</div>
+                      </div>
+                    </div>
                   </div>
+                  {/* Coaching note */}
+                  <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.5,paddingLeft:11}}>{n.note}</div>
                 </div>
               ))}
+              {/* Daily totals */}
+              {(()=>{
+                const scaled=scaleNutrition(dayData.nutrition,bodyWeight);
+                const totP=scaled.reduce((a,n)=>a+n.pro,0);
+                const totC=scaled.reduce((a,n)=>a+n.carb,0);
+                const totF=scaled.reduce((a,n)=>a+n.fat,0);
+                const totK=totP*4+totC*4+totF*9;
+                return(
+                  <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div style={{fontSize:8,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"var(--dim)"}}>DAILY TOTAL</div>
+                    <div style={{display:"flex",gap:10}}>
+                      {[["PRO",totP+"g","#47C8FF"],["CARB",totC+"g","#E8FF47"],["FAT",totF+"g","#FF8C47"],["KCAL",totK,"#47FFB8"]].map(([l,v,c])=>(
+                        <div key={l} style={{textAlign:"center"}}>
+                          <div style={{fontFamily:"'Pirata One',cursive",fontSize:15,color:c,lineHeight:1}}>{v}</div>
+                          <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:1}}>{l}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Supplements */}
@@ -2010,8 +2532,25 @@ function App(){
 
             {view==="paces"&&(
         <div style={{padding:"16px 20px 0"}}>
-          <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2,marginBottom:4}}>Training Paces</div>
-          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:2,marginBottom:16}}>DRAG SLIDER TO ADJUST YOUR EASY PACE — ALL ZONES RECALCULATE</div>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+            <span style={{fontSize:22}}>{goalCfg.icon}</span>
+            <div style={{fontFamily:"'Pirata One',cursive",fontSize:28,letterSpacing:2}}>Training Paces</div>
+          </div>
+          <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:2,marginBottom:12}}>
+            {goalCfg.label.toUpperCase()} PLAN · DRAG SLIDER TO ADJUST — ALL SESSIONS UPDATE
+          </div>
+
+          {/* Race target highlight */}
+          {racePB&&<div style={{background:`${goalCfg.color}12`,border:`1px solid ${goalCfg.color}30`,borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:goalCfg.color,letterSpacing:2}}>YOUR {goalCfg.label.toUpperCase()} PB</div>
+              <div style={{fontFamily:"'Pirata One',cursive",fontSize:24,color:"var(--text)",letterSpacing:1}}>{racePB}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--dim)",letterSpacing:2}}>RACE PACE</div>
+              <div style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:goalCfg.color}}>{PACES_COMPUTED[goalCfg.racePaceKey]?.pace}</div>
+            </div>
+          </div>}
 
           {/* Easy pace slider */}
           <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
@@ -2075,12 +2614,82 @@ function App(){
               );
             })}
           </div>
+
+          {/* ── TRAINING MIX ── */}
+          <div style={{background:"var(--card)",borderRadius:10,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:3,color:"#47C8FF",marginBottom:4}}>TRAINING MIX</div>
+            <div style={{fontSize:10,color:"var(--dim)",fontFamily:"'DM Mono',monospace",lineHeight:1.5,marginBottom:14}}>
+              Adjust how many cross-training sessions appear each week. Runs are always kept — only bike, swim and gym flex.
+            </div>
+
+            {[
+              {key:"run", label:"Runs",icon:"⚡",color:"#E8FF47",max:3,labels:["1/wk","2/wk","3/wk"],min:1,note:"Long run always kept. Slider controls Mon/Wed/Fri."},
+              {key:"bike",label:"Bike",icon:"🔄",color:"#47C8FF",max:2,labels:["Off","1/wk","2/wk"],min:0,note:"Tue AM + Thu after run."},
+              {key:"swim",label:"Swim",icon:"🌊",color:"#47FFB8",max:2,labels:["Off","1/wk","2/wk"],min:0,note:"Tue PM + Thu PM."},
+              {key:"gym", label:"Gym", icon:"💪",color:"#FF6B47",max:3,labels:["Off","1/wk","2/wk","3/wk"],min:0,note:"Mon / Wed / Fri PM."},
+            ].map(({key,label,icon,color,max,min,labels,note})=>(
+              <div key={key} style={{marginBottom:18}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:16}}>{icon}</span>
+                    <span style={{fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--muted)"}}>{label}</span>
+                  </div>
+                  <span style={{fontFamily:"'Pirata One',cursive",fontSize:18,color:(crossTrainPrefs[key]??min)===0?"var(--vdim)":color}}>
+                    {labels[(crossTrainPrefs[key]??min)-min]}
+                  </span>
+                </div>
+                <input type="range" min={min} max={max} step={1} value={crossTrainPrefs[key]??min}
+                  onChange={e=>setCrossTrainPrefs(p=>({...p,[key]:Number(e.target.value)}))}/>
+                <style>{`input[type=range]::-webkit-slider-thumb{background:${color}}input[type=range]::-moz-range-thumb{background:${color}}`}</style>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:3}}>
+                  {labels.map((l,i)=>(
+                    <span key={i} style={{fontSize:8,fontFamily:"'DM Mono',monospace",color:(crossTrainPrefs[key]??min)-min===i?color:"var(--vdim)"}}>{l}</span>
+                  ))}
+                </div>
+                <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:"var(--vdim)",marginTop:4}}>{note}</div>
+              </div>
+            ))}
+
+            {/* Week preview strip */}
+            <div style={{borderTop:`1px solid var(--border)`,paddingTop:12,marginTop:4}}>
+              <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",letterSpacing:2,color:"var(--dim)",marginBottom:8}}>TYPICAL WEEK PREVIEW</div>
+              <div style={{display:"flex",gap:3}}>
+                {effectiveWkData.map((day,di)=>{
+                  const mainType=day.sessions[0]?.type||"rest";
+                  const hasDouble=day.sessions.length>1&&day.sessions[1]?.type!=="rest";
+                  const cfg=T[mainType]||T.rest;
+                  const cfg2=hasDouble?T[day.sessions[1].type]:null;
+                  return(
+                    <div key={di} style={{flex:1,textAlign:"center"}}>
+                      <div style={{fontSize:7,fontFamily:"'DM Mono',monospace",color:"var(--dim)",marginBottom:3}}>{day.day}</div>
+                      <div style={{height:32,borderRadius:4,background:`${cfg.color}25`,border:`1px solid ${cfg.color}40`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1}}>
+                        <span style={{fontSize:10}}>{cfg.icon}</span>
+                        {cfg2&&<span style={{fontSize:8}}>{cfg2.icon}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+                {Object.entries(T).filter(([k])=>k!=="rest").map(([k,v])=>{
+                  const count=effectiveWkData.reduce((a,d)=>a+d.sessions.filter(s=>s.type===k).length,0);
+                  if(count===0)return null;
+                  return(
+                    <div key={k} style={{display:"flex",alignItems:"center",gap:4}}>
+                      <span style={{fontSize:10}}>{v.icon}</span>
+                      <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:v.color}}>{count}x</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {view==="stats"&&<StatsTab sessionLogs={sessionLogs} fiveKTimes={fiveKTimes} setFiveKTimes={setFiveKTimes}/>}
-      {view==="race"&&<RaceDayTab/>}
-      {view==="next"&&<PostPlanTab/>}
+      {view==="race"&&<RaceDayTab goal={goal||"5K"}/>}
+      {view==="next"&&<PostPlanTab goal={goal||"5K"} racePB={racePB}/>}
     </div>
   );
 }
